@@ -1,0 +1,10 @@
+.build/
+dist/
+.swiftpm/
+.DS_Store
+*.xcodeproj
+过程文件/
+工具/
+验收证据/
+*.command
+预览说明.md

@@ -1,0 +1,149 @@
+/* 简体中文。英文是源语言，这里缺的条目会自动回退到英文。 */
+
+/* MARK: - 菜单栏弹窗 */
+
+"menu.perSecond" = "每秒 +%@ 精神损失费";
+"menu.progress.today" = "今日";
+"menu.progress.month" = "本月";
+"menu.progress.year" = "本年";
+"menu.fact.remaining" = "今日剩余";
+"menu.fact.workdays" = "本月工作日";
+"menu.fact.nextHoliday" = "下一个假期";
+"menu.holiday.entry" = "%1$@ · %2$@";
+"menu.holiday.today" = "就是今天";
+"menu.holidayError" = "假日数据获取失败：%@";
+"menu.unsupportedCountry" = "%@ 没有自动假日数据，请在设置里手动添加";
+"menu.action.refresh" = "刷新假日";
+"menu.action.settings" = "设置…";
+"menu.action.quit" = "退出";
+
+/* MARK: - 功德区 */
+
+"merit.level.novice" = "沙弥";
+"merit.level.arhat" = "罗汉";
+"merit.level.sweeper" = "扫地僧";
+"merit.today" = "今日 +%@ 功德";
+"merit.progress" = "%1$@ / %2$@";
+"merit.awayFromNext" = "距「%2$@」还差 %1$@ 功德";
+"merit.redeem" = "兑换提前下班券（%@ 功德）";
+"merit.redeem.help" = "花功德换今天提前下班";
+"merit.redeem.todo" = "功德兑换还没接上，敬请期待。";
+"merit.redeem.todo.ok" = "好";
+
+/* MARK: - 工作状态 */
+
+"status.beforeWork" = "还没开始服刑";
+"status.working" = "计费中";
+"status.onBreak" = "午休（无薪）";
+"status.finished" = "今日刑满";
+"status.dayOff.holiday" = "今天是%@";
+"status.dayOff.rest" = "今天休息";
+"status.dayOff.noSchedule" = "还没设置上班时间";
+
+/* MARK: - 吐槽文案 */
+
+"snark.dayOff" = "今天一分不赚，但也一秒不用忍。";
+"snark.beforeWork" = "还没开始计费，趁现在多呼吸几口自由空气。";
+"snark.onBreak" = "午休不计薪，这段时间是你自己掏钱买的。";
+"snark.finished" = "今日额度已领满，剩下的都是白干。";
+"snark.working.q1" = "刚开机，灵魂还在通勤路上。";
+"snark.working.q2" = "熬到一半了，赔偿金正在缓慢到账。";
+"snark.working.q3" = "过半了，今天的忍耐开始有回报。";
+"snark.working.q4" = "冲刺阶段，钱和自由都在向你招手。";
+
+/* MARK: - 设置分页 */
+
+"settings.tab.salary" = "薪资";
+"settings.tab.schedule" = "工时";
+"settings.tab.holidays" = "假日";
+"settings.tab.display" = "显示";
+"settings.tab.about" = "关于";
+
+/* MARK: - 版本说明 */
+
+"about.section.app" = "应用";
+"about.name" = "名称";
+"about.version" = "版本";
+"about.maintainer" = "维护者";
+"about.section.changes" = "更新说明";
+"about.summary" = "设置页与版本说明。"
+"about.section.links" = "链接";
+"about.github" = "GitHub";
+
+/* MARK: - 薪资 */
+
+"salary.section.income" = "收入";
+"salary.amount" = "金额";
+"salary.period" = "计薪周期";
+"salary.period.monthly" = "月薪";
+"salary.period.annual" = "年薪";
+"salary.payMonths.hint" = "13 薪、14 薪填对应的月数，年终奖会按进度摊到全年。";
+"salary.section.region" = "地区";
+"salary.country" = "国家 / 地区";
+"salary.currency" = "货币";
+"salary.section.derived" = "换算结果";
+"salary.workdaysThisMonth" = "本月工作日";
+"salary.perDay" = "日薪";
+"salary.perHour" = "时薪";
+"salary.perSecond" = "秒薪";
+
+/* MARK: - 工时 */
+
+"schedule.section.weekdays" = "每周上班日";
+"schedule.section.hours" = "作息";
+"schedule.start" = "上班";
+"schedule.end" = "下班";
+"schedule.breakToggle" = "扣除午休（不计薪）";
+"schedule.breakStart" = "午休开始";
+"schedule.breakEnd" = "午休结束";
+"schedule.paidPerDay" = "每天计薪时长";
+
+/* MARK: - 假日 */
+
+"holidays.section.title" = "%@ 法定假日";
+"holidays.autoToggle" = "自动排除法定假日";
+"holidays.includeRegional" = "包含地方性和仅公务员的假日";
+"holidays.autoMakeup" = "自动采用数据源里的调休补班";
+"holidays.refresh" = "立即刷新";
+"holidays.footer" = "数据来自 %@。调休补班也从同一份数据里识别，中国、俄罗斯、越南挪出来的周末不用再手填。";
+"holidays.status.idle" = "尚未加载";
+"holidays.status.loading" = "加载中…";
+"holidays.status.unsupported" = "该地区暂无自动数据";
+"holidays.status.failed" = "失败：%@";
+"holidays.extra.title" = "额外休息日";
+"holidays.extra.hint" = "年假、假期连休、公司自定义节日";
+"holidays.makeup.title" = "调休上班日";
+"holidays.makeup.hint" = "周末补班，优先级高于休息日";
+"holidays.auto.tag" = "来自数据源";
+"holidays.add" = "添加";
+
+/* MARK: - 显示 */
+
+"away.title" = "欢迎回来";
+"away.body" = "你摸鱼 %1$@，公司照付 %2$@。";
+"away.dismiss" = "点击任意处关闭";
+
+"display.section.appearance" = "外观";
+"display.menuBar" = "菜单栏显示";
+"display.menuBar.todayAmount" = "今日已赚金额";
+"display.menuBar.todayPercent" = "今日进度百分比";
+"display.menuBar.monthAmount" = "本月已赚金额";
+"display.menuBar.monthPercent" = "本月进度百分比";
+"display.menuBar.yearPercent" = "本年进度百分比";
+"display.showIcon" = "显示图标";
+"display.showSnark" = "显示吐槽文案";
+"display.awayAlert" = "回来时提示摸鱼赚了多少";
+"display.awayAlert.detail" = "解锁屏幕时，提示这段时间公司付了多少精神损失费。午休和下班时间不计入。";
+"display.section.language" = "语言";
+"display.language" = "界面语言";
+"language.followSystem" = "跟随系统";
+"display.section.startup" = "启动";
+"display.launchAtLogin" = "开机自动启动";
+"display.launchError" = "设置失败：%@";
+"display.reset" = "恢复默认设置";
+
+/* MARK: - 假日服务错误 */
+
+"error.badResponse" = "无法解析假日服务的响应";
+"error.httpStatus" = "假日服务返回 HTTP %lld";
+"error.unsupportedCountry" = "该地区没有自动假日数据";

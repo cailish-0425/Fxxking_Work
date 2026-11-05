@@ -1,0 +1,149 @@
+/* Русский. Английский — исходный язык; отсутствующие строки берутся из него. */
+
+/* MARK: - Окно в строке меню */
+
+"menu.perSecond" = "+%@ в секунду в качестве морального ущерба";
+"menu.progress.today" = "Сегодня";
+"menu.progress.month" = "Этот месяц";
+"menu.progress.year" = "Этот год";
+"menu.fact.remaining" = "Осталось сегодня";
+"menu.fact.workdays" = "Рабочих дней в этом месяце";
+"menu.fact.nextHoliday" = "Следующий праздник";
+"menu.holiday.entry" = "%1$@ · %2$@";
+"menu.holiday.today" = "это сегодня";
+"menu.holidayError" = "Не удалось загрузить праздники: %@";
+"menu.unsupportedCountry" = "Для региона «%@» нет автоматических данных о праздниках. Добавьте дни вручную в настройках.";
+"menu.action.refresh" = "Обновить праздники";
+"menu.action.settings" = "Настройки…";
+"menu.action.quit" = "Выйти";
+
+/* MARK: - Зона заслуг */
+
+"merit.level.novice" = "Послушник";
+"merit.level.arhat" = "Архат";
+"merit.level.sweeper" = "Монах с метлой";
+"merit.today" = "Сегодня +%@ заслуг";
+"merit.progress" = "%1$@ / %2$@";
+"merit.awayFromNext" = "Ещё %1$@ заслуг до «%2$@»";
+"merit.redeem" = "Обменять на ранний уход (%@ заслуг)";
+"merit.redeem.help" = "Потратить заслуги, чтобы уйти раньше сегодня";
+"merit.redeem.todo" = "Обмен заслуг ещё не подключён.";
+"merit.redeem.todo.ok" = "ОК";
+
+/* MARK: - Рабочий статус */
+
+"status.beforeWork" = "Срок ещё не начался";
+"status.working" = "Счётчик работает";
+"status.onBreak" = "Обед (не оплачивается)";
+"status.finished" = "Срок отбыт";
+"status.dayOff.holiday" = "Сегодня %@";
+"status.dayOff.rest" = "Выходной";
+"status.dayOff.noSchedule" = "График не задан";
+
+/* MARK: - Колкости */
+
+"snark.dayOff" = "Сегодня ничего не заработано. Но и терпеть не пришлось.";
+"snark.beforeWork" = "Счётчик выключен. Дышите свободой, пока можно.";
+"snark.onBreak" = "Обед не оплачивается. Этот час вы покупаете за свой счёт.";
+"snark.finished" = "Дневная норма собрана. Всё дальнейшее — пожертвование.";
+"snark.working.q1" = "Только загрузились. Душа ещё стоит в пробке.";
+"snark.working.q2" = "Почти половина. Компенсация потихоньку капает.";
+"snark.working.q3" = "Экватор пройден. Терпение начинает окупаться.";
+"snark.working.q4" = "Финишная прямая. Деньги и свобода машут рукой.";
+
+/* MARK: - Вкладки настроек */
+
+"settings.tab.salary" = "Оплата";
+"settings.tab.schedule" = "Часы";
+"settings.tab.holidays" = "Праздники";
+"settings.tab.display" = "Вид";
+"settings.tab.about" = "О программе";
+
+/* MARK: - About tab */
+
+"about.section.app" = "Приложение";
+"about.name" = "Название";
+"about.version" = "Версия";
+"about.maintainer" = "Сопровождающий";
+"about.section.changes" = "Что нового";
+"about.summary" = "Страница настроек и примечания к версии."
+"about.section.links" = "Ссылки";
+"about.github" = "GitHub";
+
+/* MARK: - Вкладка «Оплата» */
+
+"salary.section.income" = "Доход";
+"salary.amount" = "Сумма";
+"salary.period" = "Период оплаты";
+"salary.period.monthly" = "Ежемесячно";
+"salary.period.annual" = "Ежегодно";
+"salary.payMonths.hint" = "Укажите 13 или 14, если есть годовая премия: она распределится по всему году.";
+"salary.section.region" = "Регион";
+"salary.country" = "Страна или регион";
+"salary.currency" = "Валюта";
+"salary.section.derived" = "Расчётные ставки";
+"salary.workdaysThisMonth" = "Рабочих дней в этом месяце";
+"salary.perDay" = "В день";
+"salary.perHour" = "В час";
+"salary.perSecond" = "В секунду";
+
+/* MARK: - Вкладка «Часы» */
+
+"schedule.section.weekdays" = "Рабочие дни";
+"schedule.section.hours" = "Часы";
+"schedule.start" = "Начало";
+"schedule.end" = "Окончание";
+"schedule.breakToggle" = "Вычитать неоплачиваемый обед";
+"schedule.breakStart" = "Начало перерыва";
+"schedule.breakEnd" = "Конец перерыва";
+"schedule.paidPerDay" = "Оплачиваемое время в день";
+
+/* MARK: - Вкладка «Праздники» */
+
+"holidays.section.title" = "Праздники: %@";
+"holidays.autoToggle" = "Автоматически исключать праздники";
+"holidays.includeRegional" = "Включать региональные и служебные праздники";
+"holidays.autoMakeup" = "Применять переносы рабочих дней из источника";
+"holidays.refresh" = "Обновить";
+"holidays.footer" = "Данные из %@. Переносы рабочих дней берутся оттуда же, поэтому перенесённые выходные в России, Китае и Вьетнаме уже учтены.";
+"holidays.status.idle" = "Не загружено";
+"holidays.status.loading" = "Загрузка…";
+"holidays.status.unsupported" = "Для этого региона нет автоматических данных";
+"holidays.status.failed" = "Ошибка: %@";
+"holidays.extra.title" = "Дополнительные выходные";
+"holidays.extra.hint" = "Отпуск, длинные выходные, корпоративные праздники";
+"holidays.makeup.title" = "Отработочные дни";
+"holidays.makeup.hint" = "Рабочие выходные. Они важнее дней отдыха.";
+"holidays.auto.tag" = "Из источника";
+"holidays.add" = "Добавить";
+
+/* MARK: - Вкладка «Вид» */
+
+"away.title" = "С возвращением";
+"away.body" = "Вы бездельничали %1$@. Компания заплатила вам за это %2$@.";
+"away.dismiss" = "Нажмите в любом месте, чтобы закрыть";
+
+"display.section.appearance" = "Оформление";
+"display.menuBar" = "В строке меню";
+"display.menuBar.todayAmount" = "Заработок за сегодня";
+"display.menuBar.todayPercent" = "Прогресс за сегодня";
+"display.menuBar.monthAmount" = "Заработок за месяц";
+"display.menuBar.monthPercent" = "Прогресс за месяц";
+"display.menuBar.yearPercent" = "Прогресс за год";
+"display.showIcon" = "Показывать значок";
+"display.showSnark" = "Показывать колкости";
+"display.awayAlert" = "Сообщать, сколько я заработал в отсутствие";
+"display.awayAlert.detail" = "При разблокировке экрана показывать, сколько компания заплатила вам за время отсутствия. Время вне рабочих часов не учитывается.";
+"display.section.language" = "Язык";
+"display.language" = "Язык интерфейса";
+"language.followSystem" = "Как в системе";
+"display.section.startup" = "Запуск";
+"display.launchAtLogin" = "Запускать при входе";
+"display.launchError" = "Не удалось изменить настройку: %@";
+"display.reset" = "Сбросить все настройки";
+
+/* MARK: - Ошибки службы праздников */
+
+"error.badResponse" = "Не удалось прочитать ответ службы праздников";
+"error.httpStatus" = "Служба праздников вернула HTTP %lld";
+"error.unsupportedCountry" = "Для этого региона нет автоматических данных о праздниках";

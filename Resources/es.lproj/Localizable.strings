@@ -1,0 +1,149 @@
+/* Español. El inglés es el idioma de origen; lo que falte se toma de él. */
+
+/* MARK: - Ventana de la barra de menús */
+
+"menu.perSecond" = "+%@ por segundo en daños morales";
+"menu.progress.today" = "Hoy";
+"menu.progress.month" = "Este mes";
+"menu.progress.year" = "Este año";
+"menu.fact.remaining" = "Queda hoy";
+"menu.fact.workdays" = "Días laborables este mes";
+"menu.fact.nextHoliday" = "Próximo festivo";
+"menu.holiday.entry" = "%1$@ · %2$@";
+"menu.holiday.today" = "es hoy";
+"menu.holidayError" = "No se pudieron cargar los festivos: %@";
+"menu.unsupportedCountry" = "No hay datos automáticos de festivos para %@. Añádelos manualmente en los ajustes.";
+"menu.action.refresh" = "Actualizar festivos";
+"menu.action.settings" = "Ajustes…";
+"menu.action.quit" = "Salir";
+
+/* MARK: - Zona de mérito */
+
+"merit.level.novice" = "Novicio";
+"merit.level.arhat" = "Arhat";
+"merit.level.sweeper" = "Monje barrendero";
+"merit.today" = "Hoy +%@ de mérito";
+"merit.progress" = "%1$@ / %2$@";
+"merit.awayFromNext" = "%1$@ de mérito para %2$@";
+"merit.redeem" = "Canjear salida anticipada (%@ de mérito)";
+"merit.redeem.help" = "Gasta mérito para salir antes hoy";
+"merit.redeem.todo" = "El canje de mérito aún no está listo.";
+"merit.redeem.todo.ok" = "Vale";
+
+/* MARK: - Estado laboral */
+
+"status.beforeWork" = "La condena aún no empieza";
+"status.working" = "Contador en marcha";
+"status.onBreak" = "Comida (sin pagar)";
+"status.finished" = "Condena cumplida";
+"status.dayOff.holiday" = "Hoy es %@";
+"status.dayOff.rest" = "Día libre";
+"status.dayOff.noSchedule" = "Sin horario definido";
+
+/* MARK: - Comentarios mordaces */
+
+"snark.dayOff" = "Hoy no se gana nada. Tampoco se aguanta nada.";
+"snark.beforeWork" = "El contador está parado. Respira aire libre mientras puedas.";
+"snark.onBreak" = "La comida no se paga. Esta hora la financias tú.";
+"snark.finished" = "Cupo del día completado. Lo que venga después es una donación.";
+"snark.working.q1" = "Recién arrancado. Tu alma sigue atrapada en el tráfico.";
+"snark.working.q2" = "Casi a mitad. La indemnización va cayendo poco a poco.";
+"snark.working.q3" = "Superado el ecuador. La paciencia empieza a dar frutos.";
+"snark.working.q4" = "Recta final. El dinero y la libertad ya te saludan.";
+
+/* MARK: - Pestañas de ajustes */
+
+"settings.tab.salary" = "Sueldo";
+"settings.tab.schedule" = "Horario";
+"settings.tab.holidays" = "Festivos";
+"settings.tab.display" = "Pantalla";
+"settings.tab.about" = "Acerca de";
+
+/* MARK: - About tab */
+
+"about.section.app" = "Aplicación";
+"about.name" = "Nombre";
+"about.version" = "Versión";
+"about.maintainer" = "Responsable";
+"about.section.changes" = "Novedades";
+"about.summary" = "Página de ajustes y notas de versión."
+"about.section.links" = "Enlaces";
+"about.github" = "GitHub";
+
+/* MARK: - Pestaña Sueldo */
+
+"salary.section.income" = "Ingresos";
+"salary.amount" = "Importe";
+"salary.period" = "Periodo de pago";
+"salary.period.monthly" = "Mensual";
+"salary.period.annual" = "Anual";
+"salary.payMonths.hint" = "Escribe 13 o 14 si tienes paga extra; se reparte a lo largo del año.";
+"salary.section.region" = "Región";
+"salary.country" = "País o región";
+"salary.currency" = "Moneda";
+"salary.section.derived" = "Tarifas calculadas";
+"salary.workdaysThisMonth" = "Días laborables este mes";
+"salary.perDay" = "Por día";
+"salary.perHour" = "Por hora";
+"salary.perSecond" = "Por segundo";
+
+/* MARK: - Pestaña Horario */
+
+"schedule.section.weekdays" = "Días de trabajo";
+"schedule.section.hours" = "Horario";
+"schedule.start" = "Entrada";
+"schedule.end" = "Salida";
+"schedule.breakToggle" = "Descontar la comida no pagada";
+"schedule.breakStart" = "Inicio del descanso";
+"schedule.breakEnd" = "Fin del descanso";
+"schedule.paidPerDay" = "Tiempo pagado al día";
+
+/* MARK: - Pestaña Festivos */
+
+"holidays.section.title" = "Festivos: %@";
+"holidays.autoToggle" = "Excluir festivos automáticamente";
+"holidays.includeRegional" = "Incluir festivos regionales y de la función pública";
+"holidays.autoMakeup" = "Aplicar los días de recuperación de la fuente";
+"holidays.refresh" = "Actualizar";
+"holidays.footer" = "Datos de %@. Los días de recuperación salen de la misma fuente, así que los fines de semana trasladados en China, Rusia y Vietnam ya están cubiertos.";
+"holidays.status.idle" = "Sin cargar";
+"holidays.status.loading" = "Cargando…";
+"holidays.status.unsupported" = "No hay datos automáticos para esta región";
+"holidays.status.failed" = "Error: %@";
+"holidays.extra.title" = "Días libres adicionales";
+"holidays.extra.hint" = "Vacaciones, puentes, festivos de empresa";
+"holidays.makeup.title" = "Días de recuperación";
+"holidays.makeup.hint" = "Fines de semana trabajados. Tienen prioridad sobre los días libres.";
+"holidays.auto.tag" = "De la fuente";
+"holidays.add" = "Añadir";
+
+/* MARK: - Pestaña Pantalla */
+
+"away.title" = "Bienvenido de nuevo";
+"away.body" = "Estuviste escaqueándote %1$@. La empresa te pagó %2$@ por ello.";
+"away.dismiss" = "Haz clic en cualquier parte para descartar";
+
+"display.section.appearance" = "Aspecto";
+"display.menuBar" = "En la barra de menús";
+"display.menuBar.todayAmount" = "Ganancias de hoy";
+"display.menuBar.todayPercent" = "Progreso de hoy";
+"display.menuBar.monthAmount" = "Ganancias del mes";
+"display.menuBar.monthPercent" = "Progreso del mes";
+"display.menuBar.yearPercent" = "Progreso del año";
+"display.showIcon" = "Mostrar icono";
+"display.showSnark" = "Mostrar comentarios mordaces";
+"display.awayAlert" = "Avisarme de lo que gané mientras no estaba";
+"display.awayAlert.detail" = "Al desbloquear la pantalla, muestra lo que la empresa te pagó mientras estabas fuera. El tiempo fuera del horario laboral no cuenta.";
+"display.section.language" = "Idioma";
+"display.language" = "Idioma de la interfaz";
+"language.followSystem" = "Seguir al sistema";
+"display.section.startup" = "Inicio";
+"display.launchAtLogin" = "Abrir al iniciar sesión";
+"display.launchError" = "No se pudo cambiar ese ajuste: %@";
+"display.reset" = "Restablecer todos los ajustes";
+
+/* MARK: - Errores del servicio de festivos */
+
+"error.badResponse" = "No se pudo leer la respuesta del servicio de festivos";
+"error.httpStatus" = "El servicio de festivos devolvió HTTP %lld";
+"error.unsupportedCountry" = "No hay datos automáticos de festivos para esta región";

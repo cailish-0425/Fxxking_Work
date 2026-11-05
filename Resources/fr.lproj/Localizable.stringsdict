@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Le français a deux catégories utiles ici : one (0 et 1) et other. -->
+<plist version="1.0">
+<dict>
+    <key>menu.days</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@count@</string>
+        <key>count</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>lld</string>
+            <key>one</key>
+            <string>%lld jour</string>
+            <key>other</key>
+            <string>%lld jours</string>
+        </dict>
+    </dict>
+
+    <key>menu.holiday.inDays</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@count@</string>
+        <key>count</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>lld</string>
+            <key>one</key>
+            <string>dans %lld jour</string>
+            <key>other</key>
+            <string>dans %lld jours</string>
+        </dict>
+    </dict>
+
+    <key>salary.payMonths</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@count@</string>
+        <key>count</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>lld</string>
+            <key>one</key>
+            <string>Payé sur %lld mois par an</string>
+            <key>other</key>
+            <string>Payé sur %lld mois par an</string>
+        </dict>
+    </dict>
+
+    <key>holidays.status.loaded</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@count@</string>
+        <key>count</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>lld</string>
+            <key>one</key>
+            <string>%lld jour chargé</string>
+            <key>other</key>
+            <string>%lld jours chargés</string>
+        </dict>
+    </dict>
+
+    <key>holidays.status.loadedCached</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@count@</string>
+        <key>count</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>lld</string>
+            <key>one</key>
+            <string>%lld jour chargé, depuis le cache</string>
+            <key>other</key>
+            <string>%lld jours chargés, depuis le cache</string>
+        </dict>
+    </dict>
+</dict>
+</plist>

@@ -1,0 +1,149 @@
+/* Français. L'anglais est la langue source ; les entrées manquantes y reviennent. */
+
+/* MARK: - Fenêtre de la barre des menus */
+
+"menu.perSecond" = "+%@ par seconde en dommages moraux";
+"menu.progress.today" = "Aujourd'hui";
+"menu.progress.month" = "Ce mois-ci";
+"menu.progress.year" = "Cette année";
+"menu.fact.remaining" = "Reste aujourd'hui";
+"menu.fact.workdays" = "Jours ouvrés ce mois-ci";
+"menu.fact.nextHoliday" = "Prochain jour férié";
+"menu.holiday.entry" = "%1$@ · %2$@";
+"menu.holiday.today" = "c'est aujourd'hui";
+"menu.holidayError" = "Impossible de charger les jours fériés : %@";
+"menu.unsupportedCountry" = "Aucune donnée automatique de jours fériés pour %@. Ajoutez-les manuellement dans les réglages.";
+"menu.action.refresh" = "Actualiser les jours fériés";
+"menu.action.settings" = "Réglages…";
+"menu.action.quit" = "Quitter";
+
+/* MARK: - Zone de mérite */
+
+"merit.level.novice" = "Novice";
+"merit.level.arhat" = "Arhat";
+"merit.level.sweeper" = "Moine balayeur";
+"merit.today" = "Aujourd'hui +%@ de mérite";
+"merit.progress" = "%1$@ / %2$@";
+"merit.awayFromNext" = "Encore %1$@ de mérite pour %2$@";
+"merit.redeem" = "Échanger une sortie anticipée (%@ de mérite)";
+"merit.redeem.help" = "Dépenser du mérite pour partir plus tôt aujourd'hui";
+"merit.redeem.todo" = "L'échange de mérite n'est pas encore branché.";
+"merit.redeem.todo.ok" = "D'accord";
+
+/* MARK: - Statut de travail */
+
+"status.beforeWork" = "La peine n'a pas commencé";
+"status.working" = "Au compteur";
+"status.onBreak" = "Pause déjeuner (non payée)";
+"status.finished" = "Peine purgée";
+"status.dayOff.holiday" = "%@ aujourd'hui";
+"status.dayOff.rest" = "Jour de repos";
+"status.dayOff.noSchedule" = "Aucun horaire défini";
+
+/* MARK: - Remarques narquoises */
+
+"snark.dayOff" = "Rien de gagné aujourd'hui. Rien d'enduré non plus.";
+"snark.beforeWork" = "Le compteur est à l'arrêt. Respirez l'air libre tant qu'il est temps.";
+"snark.onBreak" = "Le déjeuner n'est pas payé. Cette heure-là, vous la financez vous-même.";
+"snark.finished" = "Quota du jour atteint. Tout ce qui suit est un don.";
+"snark.working.q1" = "À peine démarré. Votre âme est encore dans les embouteillages.";
+"snark.working.q2" = "Bientôt la moitié. L'indemnisation arrive doucement.";
+"snark.working.q3" = "Le cap est passé. La patience commence à payer.";
+"snark.working.q4" = "Dernière ligne droite. L'argent et la liberté vous font signe.";
+
+/* MARK: - Onglets des réglages */
+
+"settings.tab.salary" = "Salaire";
+"settings.tab.schedule" = "Horaires";
+"settings.tab.holidays" = "Jours fériés";
+"settings.tab.display" = "Affichage";
+"settings.tab.about" = "À propos";
+
+/* MARK: - About tab */
+
+"about.section.app" = "Application";
+"about.name" = "Nom";
+"about.version" = "Version";
+"about.maintainer" = "Mainteneur";
+"about.section.changes" = "Nouveautés";
+"about.summary" = "Page de réglages et notes de version."
+"about.section.links" = "Liens";
+"about.github" = "GitHub";
+
+/* MARK: - Onglet Salaire */
+
+"salary.section.income" = "Revenu";
+"salary.amount" = "Montant";
+"salary.period" = "Périodicité";
+"salary.period.monthly" = "Mensuel";
+"salary.period.annual" = "Annuel";
+"salary.payMonths.hint" = "Saisissez 13 ou 14 si vous touchez une prime de fin d'année ; elle est répartie sur toute l'année.";
+"salary.section.region" = "Région";
+"salary.country" = "Pays ou région";
+"salary.currency" = "Devise";
+"salary.section.derived" = "Taux calculés";
+"salary.workdaysThisMonth" = "Jours ouvrés ce mois-ci";
+"salary.perDay" = "Par jour";
+"salary.perHour" = "Par heure";
+"salary.perSecond" = "Par seconde";
+
+/* MARK: - Onglet Horaires */
+
+"schedule.section.weekdays" = "Jours travaillés";
+"schedule.section.hours" = "Horaires";
+"schedule.start" = "Début";
+"schedule.end" = "Fin";
+"schedule.breakToggle" = "Déduire la pause déjeuner non payée";
+"schedule.breakStart" = "Début de la pause";
+"schedule.breakEnd" = "Fin de la pause";
+"schedule.paidPerDay" = "Temps payé par jour";
+
+/* MARK: - Onglet Jours fériés */
+
+"holidays.section.title" = "Jours fériés : %@";
+"holidays.autoToggle" = "Ignorer automatiquement les jours fériés";
+"holidays.includeRegional" = "Inclure les jours fériés régionaux et de la fonction publique";
+"holidays.autoMakeup" = "Appliquer les jours de rattrapage de la source";
+"holidays.refresh" = "Actualiser";
+"holidays.footer" = "Données de %@. Les journées de rattrapage viennent de la même source : les week-ends déplacés en Chine, en Russie et au Vietnam sont déjà pris en compte.";
+"holidays.status.idle" = "Non chargé";
+"holidays.status.loading" = "Chargement…";
+"holidays.status.unsupported" = "Aucune donnée automatique pour cette région";
+"holidays.status.failed" = "Échec : %@";
+"holidays.extra.title" = "Jours de congé supplémentaires";
+"holidays.extra.hint" = "Congés annuels, ponts, jours fériés d'entreprise";
+"holidays.makeup.title" = "Jours de rattrapage";
+"holidays.makeup.hint" = "Week-ends travaillés. Ils priment sur les jours de repos.";
+"holidays.auto.tag" = "Depuis la source";
+"holidays.add" = "Ajouter";
+
+/* MARK: - Onglet Affichage */
+
+"away.title" = "Content de vous revoir";
+"away.body" = "Vous avez glandé pendant %1$@. L'entreprise vous a versé %2$@ pour ça.";
+"away.dismiss" = "Cliquez n'importe où pour fermer";
+
+"display.section.appearance" = "Apparence";
+"display.menuBar" = "Barre des menus";
+"display.menuBar.todayAmount" = "Gains du jour";
+"display.menuBar.todayPercent" = "Progression du jour";
+"display.menuBar.monthAmount" = "Gains du mois";
+"display.menuBar.monthPercent" = "Progression du mois";
+"display.menuBar.yearPercent" = "Progression de l'année";
+"display.showIcon" = "Afficher l'icône";
+"display.showSnark" = "Afficher les remarques narquoises";
+"display.awayAlert" = "Signaler ce que j'ai gagné en mon absence";
+"display.awayAlert.detail" = "Au déverrouillage de l'écran, affiche ce que l'entreprise vous a versé pendant votre absence. Le temps hors des heures de travail ne compte pas.";
+"display.section.language" = "Langue";
+"display.language" = "Langue de l'interface";
+"language.followSystem" = "Suivre le système";
+"display.section.startup" = "Démarrage";
+"display.launchAtLogin" = "Ouvrir à la session";
+"display.launchError" = "Impossible de modifier ce réglage : %@";
+"display.reset" = "Réinitialiser tous les réglages";
+
+/* MARK: - Erreurs du service de jours fériés */
+
+"error.badResponse" = "Impossible de lire la réponse du service de jours fériés";
+"error.httpStatus" = "Le service de jours fériés a renvoyé HTTP %lld";
+"error.unsupportedCountry" = "Aucune donnée automatique de jours fériés pour cette région";

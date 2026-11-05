@@ -1,0 +1,151 @@
+/* Fxxking Work — source language.
+   Keys are semantic rather than English text so that two identical English
+   phrases can still take different translations elsewhere. */
+
+/* MARK: - Menu bar popover */
+
+"menu.perSecond" = "+%@ per second in emotional damages";
+"menu.progress.today" = "Today";
+"menu.progress.month" = "This month";
+"menu.progress.year" = "This year";
+"menu.fact.remaining" = "Left today";
+"menu.fact.workdays" = "Workdays this month";
+"menu.fact.nextHoliday" = "Next holiday";
+"menu.holiday.entry" = "%1$@ · %2$@";
+"menu.holiday.today" = "that's today";
+"menu.holidayError" = "Couldn't load holidays: %@";
+"menu.unsupportedCountry" = "No automatic holiday data for %@. Add days manually in Settings.";
+"menu.action.refresh" = "Refresh holidays";
+"menu.action.settings" = "Settings…";
+"menu.action.quit" = "Quit";
+
+/* MARK: - Merit zone */
+
+"merit.level.novice" = "Novice";
+"merit.level.arhat" = "Arhat";
+"merit.level.sweeper" = "Sweeping Monk";
+"merit.today" = "Today +%@ merit";
+"merit.progress" = "%1$@ / %2$@";
+"merit.awayFromNext" = "%1$@ merit to %2$@";
+"merit.redeem" = "Redeem early leave (%@ merit)";
+"merit.redeem.help" = "Spend merit to leave early today";
+"merit.redeem.todo" = "Merit redemption isn't wired up yet.";
+"merit.redeem.todo.ok" = "OK";
+
+/* MARK: - Work status */
+
+"status.beforeWork" = "Sentence hasn't started";
+"status.working" = "On the meter";
+"status.onBreak" = "Lunch (unpaid)";
+"status.finished" = "Time served";
+"status.dayOff.holiday" = "%@ today";
+"status.dayOff.rest" = "Day off";
+"status.dayOff.noSchedule" = "No hours set";
+
+/* MARK: - Snarky remarks */
+
+"snark.dayOff" = "Nothing earned today. Nothing endured either.";
+"snark.beforeWork" = "The meter's off. Breathe the free air while you can.";
+"snark.onBreak" = "Lunch is unpaid. You're buying this hour out of pocket.";
+"snark.finished" = "Daily quota collected. Everything after this is a donation.";
+"snark.working.q1" = "Just booted. Your soul is still stuck in traffic.";
+"snark.working.q2" = "Nearly halfway. The damages are slowly clearing.";
+"snark.working.q3" = "Past the midpoint. Today's patience is starting to pay.";
+"snark.working.q4" = "Home stretch. Money and freedom are both waving.";
+
+/* MARK: - Settings tabs */
+
+"settings.tab.salary" = "Pay";
+"settings.tab.schedule" = "Hours";
+"settings.tab.holidays" = "Holidays";
+"settings.tab.display" = "Display";
+"settings.tab.about" = "About";
+
+/* MARK: - About tab */
+
+"about.section.app" = "App";
+"about.name" = "Name";
+"about.version" = "Version";
+"about.maintainer" = "Maintainer";
+"about.section.changes" = "What's new";
+"about.summary" = "Settings page and version notes."
+"about.section.links" = "Links";
+"about.github" = "GitHub";
+
+/* MARK: - Pay tab */
+
+"salary.section.income" = "Income";
+"salary.amount" = "Amount";
+"salary.period" = "Pay period";
+"salary.period.monthly" = "Monthly";
+"salary.period.annual" = "Annual";
+"salary.payMonths.hint" = "Enter 13 or 14 if you get a year-end bonus; it is spread across the year.";
+"salary.section.region" = "Region";
+"salary.country" = "Country or region";
+"salary.currency" = "Currency";
+"salary.section.derived" = "Derived rates";
+"salary.workdaysThisMonth" = "Workdays this month";
+"salary.perDay" = "Per day";
+"salary.perHour" = "Per hour";
+"salary.perSecond" = "Per second";
+
+/* MARK: - Hours tab */
+
+"schedule.section.weekdays" = "Working days";
+"schedule.section.hours" = "Hours";
+"schedule.start" = "Starts";
+"schedule.end" = "Ends";
+"schedule.breakToggle" = "Deduct unpaid lunch break";
+"schedule.breakStart" = "Break starts";
+"schedule.breakEnd" = "Break ends";
+"schedule.paidPerDay" = "Paid time per day";
+
+/* MARK: - Holidays tab */
+
+"holidays.section.title" = "Public holidays in %@";
+"holidays.autoToggle" = "Skip public holidays automatically";
+"holidays.includeRegional" = "Include regional and public-sector holidays";
+"holidays.autoMakeup" = "Apply makeup workdays from the data source";
+"holidays.refresh" = "Refresh now";
+"holidays.footer" = "Data from %@. Makeup workdays come from the same source, so shifted weekends in China, Russia and Vietnam are already handled.";
+"holidays.status.idle" = "Not loaded";
+"holidays.status.loading" = "Loading…";
+"holidays.status.unsupported" = "No automatic data for this region";
+"holidays.status.failed" = "Failed: %@";
+"holidays.extra.title" = "Extra days off";
+"holidays.extra.hint" = "Annual leave, bridge days, company holidays";
+"holidays.makeup.title" = "Makeup workdays";
+"holidays.makeup.hint" = "Weekend catch-up days. These override days off.";
+"holidays.auto.tag" = "From data source";
+"holidays.add" = "Add";
+
+/* MARK: - Display tab */
+
+"away.title" = "Welcome back";
+"away.body" = "You slacked off for %1$@. The company paid you %2$@ for it.";
+"away.dismiss" = "Click anywhere to dismiss";
+
+"display.section.appearance" = "Appearance";
+"display.menuBar" = "Menu bar shows";
+"display.menuBar.todayAmount" = "Today's earnings";
+"display.menuBar.todayPercent" = "Today's progress";
+"display.menuBar.monthAmount" = "This month's earnings";
+"display.menuBar.monthPercent" = "This month's progress";
+"display.menuBar.yearPercent" = "This year's progress";
+"display.showIcon" = "Show icon";
+"display.showSnark" = "Show snarky remarks";
+"display.awayAlert" = "Report what I earned while away";
+"display.awayAlert.detail" = "When you unlock the screen, show what the company paid you while you were gone. Time outside working hours doesn't count.";
+"display.section.language" = "Language";
+"display.language" = "Interface language";
+"language.followSystem" = "Follow system";
+"display.section.startup" = "Startup";
+"display.launchAtLogin" = "Open at login";
+"display.launchError" = "Couldn't change that setting: %@";
+"display.reset" = "Reset all settings";
+
+/* MARK: - Holiday service errors */
+
+"error.badResponse" = "Couldn't read the response from the holiday service";
+"error.httpStatus" = "The holiday service returned HTTP %lld";
+"error.unsupportedCountry" = "No automatic holiday data for this region";
