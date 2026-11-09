@@ -14,7 +14,7 @@
 | 下载代码 | [源码 ZIP](https://github.com/cailish-0425/Fxxking_Work/archive/refs/heads/main.zip) · `git clone https://github.com/cailish-0425/Fxxking_Work.git` |
 | Agent 获取 | [命令下载与校验](#agent-获取) |
 
-首个 Release 安装包正在准备；发布前请使用下面的源码构建方式。应用需要 macOS 14 或更高版本。
+安装包随 GitHub Release 发布，也可以使用下面的源码构建方式。应用需要 macOS 14 或更高版本。
 
 ## 功能
 
@@ -79,7 +79,7 @@ shasum -a 256 -c SHA256SUMS
 SH
 ```
 
-首个 Release 发布前此方式也不可用。下载后按上面的应用安装步骤操作；源码 ZIP 用于构建，不是可运行安装包。
+下载后按上面的应用安装步骤操作；源码 ZIP 用于构建，不是可运行安装包。
 
 ### 从源码构建
 
