@@ -46,7 +46,7 @@ download_url() {
 
 if [ ! -f "$ARCHIVE" ]; then
     log "下载 Sparkle $SPARKLE_VERSION"
-    curl -fL --retry 3 --retry-delay 2 "$(download_url)" -o "$ARCHIVE" 2>&1 >&2
+    curl --fail --silent --show-error --location --retry 3 --retry-delay 2 "$(download_url)" -o "$ARCHIVE"
 else
     log "使用已缓存的发行包: $ARCHIVE"
 fi
