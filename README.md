@@ -14,7 +14,7 @@
 | 下载代码 | [源码 ZIP](https://github.com/cailish-0425/Fxxking_Work/archive/refs/heads/main.zip) · `git clone https://github.com/cailish-0425/Fxxking_Work.git` |
 | Agent 获取 | [命令下载与校验](#agent-获取) |
 
-安装包随 GitHub Release 发布，也可以使用下面的源码构建方式。应用需要 macOS 14 或更高版本。
+从 [Releases](https://github.com/cailish-0425/Fxxking_Work/releases) 下载通用安装包（`Fxxking_Work-macos-universal.zip`）与 `SHA256SUMS`；也可以按下面的方式从源码构建。应用需要 macOS 14 或更高版本。
 
 ## 功能
 
