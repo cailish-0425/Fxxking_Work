@@ -74,6 +74,17 @@ final class PrivacyController: ObservableObject {
         scheduleAutoHide()
     }
 
+    /// 打开面板时揭示菜单栏当前显示的那一项金额。
+    ///
+    /// 幂等：已经揭示就不再重排计时，否则视图每次重建触发的 `onAppear` 都会把倒计时清零，
+    /// 30 秒自动隐藏就永远不会到点。只有从「未揭示 → 揭示」才起表。
+    func revealMenuBarAmount(_ display: MenuBarDisplay) {
+        guard enabled, let surface = MenuBarLabel.surface(for: display) else { return }
+        guard !revealedSurfaces.contains(surface) else { return }
+        revealedSurfaces.insert(surface)
+        scheduleAutoHide()
+    }
+
     /// 生命周期回调：面板/窗口真正消失或 app 失活时清除全部临时揭示。
     func resetForLifecycle() {
         revealedSurfaces.removeAll()

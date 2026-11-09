@@ -60,6 +60,11 @@
 "about.summary" = "Page de réglages et notes de version.";
 "about.section.links" = "Liens";
 "about.github" = "GitHub";
+"about.section.updates" = "Mises à jour";
+"about.updater.check" = "Rechercher les mises à jour…";
+"about.updater.auto" = "Rechercher les mises à jour automatiquement";
+"about.updater.auto.detail" = "Désactivé par défaut. Une fois activé, la vérification se fait en arrière-plan mais l’installation demande toujours confirmation.";
+"about.updater.unconfigured" = "Mise à jour non configurée : %@ manquant";
 
 /* MARK: - Onglet Salaire */
 
@@ -68,7 +73,7 @@
 "salary.period" = "Périodicité";
 "salary.period.monthly" = "Mensuel";
 "salary.period.annual" = "Annuel";
-"salary.payMonths.hint" = "Saisissez 13 ou 14 si vous touchez une prime de fin d'année ; elle est répartie sur toute l'année.";
+"salary.payMonths.hint" = "Indiquez le nombre de mois payés par an ; la prime éventuelle est estimée selon le mode de calcul.";
 "salary.section.region" = "Région";
 "salary.country" = "Pays ou région";
 "salary.currency" = "Devise";
@@ -182,7 +187,7 @@
 /* MARK: - 隐私模式 */
 "privacy.section" = "Confidentialité";
 "privacy.toggle" = "Mode confidentialité";
-"privacy.toggle.detail" = "Masque tous les montants par défaut. Touchez un montant pour l'afficher, encore pour le masquer.";
+"privacy.toggle.detail" = "Masque les montants de la barre des menus et du panneau. Touchez un montant pour l’afficher, encore pour le masquer. Les montants des Réglages restent visibles.";
 "privacy.reveal" = "Afficher le montant";
 "privacy.hide" = "Masquer le montant";
 "privacy.autoHide" = "Les montants se masquent après 30 secondes.";

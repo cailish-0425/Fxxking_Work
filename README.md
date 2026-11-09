@@ -6,6 +6,16 @@
 
 菜单栏常驻一个数字，点开能看到今日、本月、本年三条进度：钱赚到了百分之几，金额是多少，今天还剩多久刑期。
 
+## 下载
+
+| 方式 | 入口 |
+|---|---|
+| 直接下载应用 | [macOS 通用安装包](https://github.com/cailish-0425/Fxxking_Work/releases/latest/download/Fxxking_Work-macos-universal.zip) · [版本说明](https://github.com/cailish-0425/Fxxking_Work/releases) |
+| 下载代码 | [源码 ZIP](https://github.com/cailish-0425/Fxxking_Work/archive/refs/heads/main.zip) · `git clone https://github.com/cailish-0425/Fxxking_Work.git` |
+| Agent 获取 | [命令下载与校验](#agent-获取) |
+
+首个 Release 安装包正在准备；发布前请使用下面的源码构建方式。应用需要 macOS 14 或更高版本。
+
 ## 功能
 
 - **实时计费**：菜单栏每秒刷新，弹窗打开时按 0.1 秒跳动
@@ -22,9 +32,10 @@
 - **手动加班计时**：下班后手动点开始 / 结束才计入；有偿按 1／2／3 倍时薪逐秒累计并计入收入，无偿只显示「赔了多少钱」，不动工资与税额
 - **工资变更历史**：每次涨薪记一条生效日期，生效日前按旧工资、之后按新工资分段计薪，改今天不改过去
 - **发薪日与账期**：可设账期截止日、名义发薪日与当月／次月，主面板显示下次发薪倒计时和本账期已赚
-- **隐私模式**：默认把所有金额显示成 `••••`，点击金额就地显示、再点隐藏，没有眼睛图标；关闭窗口、切换应用或重启即恢复隐藏，已显示的内容在点开 30 秒后自动恢复
+- **隐私模式**：菜单栏和主面板金额默认隐藏，点击显示、再点隐藏；关闭面板、切换应用或 30 秒后收起。设置窗口的金额直接查看和编辑。
 - **跟随系统 / 浅色 / 深色**：菜单栏弹窗与设置窗口一起切换，重启保持
 - **菜单栏显示内容可选**：今日金额、今日百分比、本月金额、本月百分比、本年百分比
+- **应用内更新**：在「关于」页检查 GitHub 发布版本，可自行开启自动检查；下载后由更新器验签并经确认安装。
 - **开机自启**：通过 `SMAppService` 注册登录项
 - **五种语言**：英、中、法、俄、西，默认跟随系统，也可以在设置里单独指定，切换即时生效无需重启
 
@@ -39,14 +50,45 @@
 
 ### 下载现成的
 
-暂未提供独立安装包，请使用下面的「从源码构建」。
+从页面顶部下载应用 ZIP，解压后将 `Fxxking Work.app` 拖入「应用程序」。更新前先在旧应用面板点击「退出」。
+
+每个版本同时提供 `SHA256SUMS`。下载 ZIP 和 `SHA256SUMS` 到同一目录后执行：
+
+```bash
+shasum -a 256 -c SHA256SUMS
+```
+
+校验不通过时重新下载。当前本地构建为 ad-hoc 签名，未做 Apple 公证，首次运行按 macOS 的安全提示处理。
+
+### Agent 获取
+
+AI Agent 可执行以下命令获取同一正式版本的应用包和校验文件；不需要 GitHub Token，不会自动安装或启动应用。
+
+```bash
+bash <<'SH'
+set -euo pipefail
+mkdir -p Fxxking_Work-download
+cd Fxxking_Work-download
+release_url="$(curl --fail --silent --show-error --location --output /dev/null --write-out '%{url_effective}' https://github.com/cailish-0425/Fxxking_Work/releases/latest)"
+release_tag="${release_url##*/}"
+[[ "$release_url" == "https://github.com/cailish-0425/Fxxking_Work/releases/tag/"* ]] || { echo "未找到正式发布版本" >&2; exit 1; }
+asset_url="https://github.com/cailish-0425/Fxxking_Work/releases/download/$release_tag"
+curl --fail --show-error --location "$asset_url/Fxxking_Work-macos-universal.zip" -o Fxxking_Work-macos-universal.zip
+curl --fail --show-error --location "$asset_url/SHA256SUMS" -o SHA256SUMS
+shasum -a 256 -c SHA256SUMS
+SH
+```
+
+首个 Release 发布前此方式也不可用。下载后按上面的应用安装步骤操作；源码 ZIP 用于构建，不是可运行安装包。
 
 ### 从源码构建
 
 需要 Xcode Command Line Tools（`xcode-select --install`）。本机编译的产物不带隔离标记，装完直接能用。
 
 ```bash
-./Scripts/build-app.sh --install
+git clone https://github.com/cailish-0425/Fxxking_Work.git
+cd Fxxking_Work
+./Scripts/build-app.sh
 ```
 
 `--install` 会把产物拷进 `/Applications` 并打开。去掉这个参数则只在 `dist/` 下生成 `Fxxking Work.app`。构建脚本会尽量产出通用二进制，另一架构编译失败时自动降级为仅本机架构。
@@ -55,62 +97,13 @@
 
 界面语言默认跟随系统，所以在英文系统上装完看到的是英文。想固定用某种语言的话，去「显示」页改「界面语言」。
 
-## 在其他机器上运行
+## 运行与发布
 
-产物是 arm64 + x86_64 的通用二进制，只链接系统自带的框架和 `/usr/lib/swift`，**目标机器不需要安装 Swift 运行时或 Xcode**。唯一的硬性要求是 macOS 14 或更高。
+正式安装包包含 arm64、x86_64 和更新框架，目标机器只需 macOS 14 或更高版本。当前使用 ad-hoc 签名，未做 Apple 公证；首次打开请按系统安全提示处理。
 
-麻烦的地方在 Gatekeeper：构建脚本只做了 ad-hoc 临时签名，没有 Developer ID 也没有公证（notarization）。签名本身有效，但 `spctl` 会判定 `rejected`。三种做法：
+从 1.2.2 起，「设置 → 关于」提供「检查更新」。自动检查默认关闭，安装由用户确认。旧版没有内置更新器，需要先手动安装一次新版。若应用内安装被系统授权拦截，可手动下载本页安装包替换。
 
-### 一、对方自己从源码构建（最省事）
-
-对方装了 Command Line Tools 就行。本机构建出来的东西不带隔离属性，不会有任何提示。
-
-```bash
-./Scripts/build-app.sh --install
-```
-
-### 二、拷贝构建好的包
-
-```bash
-./Scripts/build-app.sh --zip     # 生成 dist/Fxxking Work.zip，约 500 KB
-```
-
-必须用脚本里的 `ditto` 打包，普通 `zip` 命令不保留 macOS 元数据，解压后签名会失效。
-
-对方拿到后，如果是**通过网络传的**（下载、微信、邮件、AirDrop），文件会被打上 `com.apple.quarantine`，双击会弹「Apple 无法验证此 App 是否包含恶意软件」。两种解法：
-
-```bash
-# 命令行：拖进 /Applications 后执行
-xattr -dr com.apple.quarantine "/Applications/Fxxking Work.app"
-```
-
-或者走图形界面：双击被拦后，到「系统设置 → 隐私与安全性」，下滑找到那条拦截记录，点「仍要打开」。
-
-用 U 盘之类的本地介质拷贝则不会有隔离属性，可以直接运行。
-
-### 三、发一个 GitHub Release
-
-`.github/workflows/release.yml` 负责这件事：推一个 `v` 开头的 tag，CI 就在 macOS runner 上跑断言、校验各语言文案、构建通用二进制、打包，然后连同 SHA-256 一起发布。
-
-```bash
-git tag v1.0.1 && git push origin v1.0.1
-```
-
-Release 说明取自 `.github/release-notes.md`，改这个文件就能改所有后续版本的说明。在 Actions 页面手动触发（workflow_dispatch）则只构建、把产物传成 artifact，不会发版，适合验证流水线。
-
-### 四、正式签名并公证（要给不认识的人用就得这样）
-
-需要 Apple Developer Program 会员资格（每年 99 美元）。有了 Developer ID 证书之后：
-
-```bash
-codesign --force --options runtime --timestamp \
-    --sign "Developer ID Application: 你的名字 (TEAMID)" "dist/Fxxking Work.app"
-ditto -c -k --sequesterRsrc --keepParent "dist/Fxxking Work.app" upload.zip
-xcrun notarytool submit upload.zip --apple-id <你的账号> --team-id <TEAMID> --wait
-xcrun stapler staple "dist/Fxxking Work.app"
-```
-
-公证并 staple 之后，任何 Mac 双击都不会有提示。注意 `--options runtime`（Hardened Runtime）是公证的前提条件。
+维护者推送 `v` 开头的版本 tag 后，GitHub Actions 会跑检查、构建双架构应用、验证签名，再发布安装包、`SHA256SUMS` 和已签名的 `appcast.xml`。发布私钥保存在仓库 Actions secret，公钥随应用；私钥不进入源码或安装包。手动触发 workflow 仅生成构建产物。
 
 ## 摸鱼战报
 
@@ -124,7 +117,7 @@ xcrun stapler staple "dist/Fxxking Work.app"
 
 提示走系统通知，但面板里同时留一张卡片。系统通知可能因为没授权、开着专注模式而发不出去，那时候卡片就是兜底，功能不会因此静默失效。
 
-卡片整张都是关闭按钮，点哪儿都行。右上角的叉留着当"可关闭"的记号，但它只是画上去的，真正接管点击的是外面那个按钮——对一个看完就该消失的提示来说，没必要要求用户去命中一个 14pt 见方的小目标。
+卡片右侧按钮用于关闭提示；隐私开启时，点击金额可临时查看，关闭提示和显示金额各自操作。系统通知仅显示时长。
 
 ## 界面语言
 
@@ -271,7 +264,7 @@ python3 Scripts/check-localization.py  # 比对代码用到的 key 和各语言�
 
 ### 构建为什么不走 swift build
 
-仓库里有一份标准的 `Package.swift`，`swift build` 可以正常工作。但只装了 Command Line Tools 的机器上，SwiftPM 可能因为 `PackageDescription.swiftmodule` 和 `libPackageDescription.dylib` 来自不同版本而无法解析任何清单，链接期报 `Undefined symbols: PackageDescription.Package.__allocating_init`。遇到这种情况装一个官方工具链即可：
+仓库里有一份标准的 `Package.swift`。先运行 `./Scripts/fetch-sparkle.sh` 获取固定版本的更新框架，再运行 `swift build`。但只装了 Command Line Tools 的机器上，SwiftPM 可能因为 `PackageDescription.swiftmodule` 和 `libPackageDescription.dylib` 来自不同版本而无法解析任何清单，链接期报 `Undefined symbols: PackageDescription.Package.__allocating_init`。遇到这种情况装一个官方工具链即可：
 
 ```bash
 brew install swiftly && swiftly init --assume-yes
@@ -312,6 +305,9 @@ Sources/Fxxking_Work/
     Formatters.swift           金额、百分比、时长、时间点，全部带 locale
     Localization.swift         AppLanguage 与字符串查找，语言切换在这里
     PrivacyController.swift    隐私揭示状态与自动隐藏
+    UpdaterService.swift       应用内检查与安装更新
+    MenuBarLabel.swift         菜单栏金额与隐私状态
+    MenuBarPanelVisibility.swift 菜单栏面板自身窗口的显隐
     DisplayNames.swift         枚举的展示名和吐槽文案，模型层因此不碰翻译
 Resources/
   AppIcon.png                  1024 图标母版，各尺寸与 .icns 在构建时生成

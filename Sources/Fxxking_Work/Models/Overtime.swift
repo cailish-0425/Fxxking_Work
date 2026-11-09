@@ -82,6 +82,15 @@ struct OvertimeLedger {
 
     // MARK: - 开始 / 结束（幂等）
 
+    /// 工作日须等规定下班时刻；休息日/假日允许用户显式开始。
+    static func canStart(at date: Date, config: Configuration, workCalendar: WorkCalendar, calendar: Calendar) -> Bool {
+        guard workCalendar.isWorkday(date) else { return true }
+        let day = calendar.startOfDay(for: date)
+        guard let end = calendar.date(byAdding: .minute, value: config.endMinutes, to: day) else { return false }
+        return date >= end
+    }
+
+
     /// 开始：已存在进行中的段则拒绝（幂等防重复）。
     mutating func start(
         at: Date, kind: OvertimePayKind, multiplier: Int,

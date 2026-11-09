@@ -176,25 +176,39 @@ struct EarningsEngine {
             }
             regularGrossPerMonth = grossPerMonth
 
+            // 额外薪基准：与税前 bonusExtra 同源，取「年末正常月薪」（工资历史/基线/当前工资统一入口），
+            // 不含任何加班；税后累计预扣时传给 compute 作 bonusBaseMonthly，避免把 12 月加班毛额误当年终奖重复。
+            let extraMonths = max(config.payMonthsPerYear - 12, 0)
+            let bonusBaseMonthly: Money? = extraMonths > 0
+                ? Money(yuan: schedule.monthlyGross(on: calendar.date(from: DateComponents(year: yearIndex, month: 12, day: 31)) ?? now))
+                : nil
+            // 社保 auto 基数按「各月正常工资」逐月取值（工资历史分段），不随有偿加班抬高、不随今日月薪统一。
+            // grossPerMonth 本身即各月正常毛额（monthRegularGross 分段），作为 socialBasePerMonth 传入。
+            let socialBasePerMonth: [Money]? = grossPerMonth
+
             // 已结束的有偿加班毛额按归属月拆（进行中段不含，见 snapshot 里的临时预测）。
             otFinalByMonth = finishedOTByMonth(at: now)
 
-            // 仅正常工资的逐月净额（社保基数/扣除按正常月薪解析，与加班基准口径分开）。
+            // 仅正常工资的逐月净额（社保基数/扣除按各月正常工资解析，与加班基准口径分开）。
             netBaseMonths = Self.computeNet(
                 grossPerMonth: grossPerMonth, otByMonth: nil,
                 payMonthsPerYear: config.payMonthsPerYear, profile: config.tax,
-                countryCode: config.countryCode, currencyCode: config.currencyCode)
+                countryCode: config.countryCode, currencyCode: config.currencyCode,
+                bonusBaseMonthly: bonusBaseMonthly, socialBasePerMonth: socialBasePerMonth)
             // 正常 + 已结束有偿加班毛额合并后重新累计预扣，得到最终月/年净额。
             netMonths = Self.computeNet(
                 grossPerMonth: grossPerMonth, otByMonth: otFinalByMonth,
                 payMonthsPerYear: config.payMonthsPerYear, profile: config.tax,
-                countryCode: config.countryCode, currencyCode: config.currencyCode)
+                countryCode: config.countryCode, currencyCode: config.currencyCode,
+                bonusBaseMonthly: bonusBaseMonthly, socialBasePerMonth: socialBasePerMonth)
 
-            // 阻塞/提示口径：以最终（含已结束加班）计算为准。
+            // 阻塞/提示口径：与最终计算同口径（合并已结束加班毛额后 compute，socialBase 用各月正常工资），
+            // 避免 netBlocked 漏掉因 OT 抬毛额才出现的参数错误（如某月缴费超毛额）。
             let final = Self.computeResult(
-                grossPerMonth: grossPerMonth, otByMonth: otFinalByMonth,
+                grossPerMonth: Self.mergedGross(grossPerMonth, otByMonth: otFinalByMonth), otByMonth: nil,
                 payMonthsPerYear: config.payMonthsPerYear, profile: config.tax,
-                countryCode: config.countryCode, currencyCode: config.currencyCode)
+                countryCode: config.countryCode, currencyCode: config.currencyCode,
+                bonusBaseMonthly: bonusBaseMonthly, socialBasePerMonth: socialBasePerMonth)
             netBlocked = final.blocked
             netWarnings = final.warnings
         } else {
@@ -210,26 +224,34 @@ struct EarningsEngine {
 
     /// 统一税后计算：正常逐月毛额 + 可选有偿加班逐月毛额 → 逐月净额。
     /// otByMonth 为 nil 表示「仅正常」；非 nil 表示正常+加班合并后重新累计预扣。
+    /// 额外薪基准统一传「年末正常月薪」，社保 auto 基数统一传「各月正常工资月薪」，与税前口径同源。
     private static func computeNet(
         grossPerMonth: [Money],
         otByMonth: [Double]?,
         payMonthsPerYear: Int,
         profile: TaxProfile,
         countryCode: String,
-        currencyCode: String
+        currencyCode: String,
+        bonusBaseMonthly: Money? = nil,
+        socialBasePerMonth: [Money]? = nil
     ) -> [NetPayCalculator.MonthlyNet]? {
-        var gross = grossPerMonth
-        if let otByMonth {
-            for month in 1...12 {
-                let extra = otByMonth[month - 1]
-                if extra > 0 { gross[month - 1] = gross[month - 1] + Money(yuan: extra) }
-            }
-        }
         let result = computeResult(
-            grossPerMonth: gross, otByMonth: otByMonth,
+            grossPerMonth: mergedGross(grossPerMonth, otByMonth: otByMonth), otByMonth: nil,
             payMonthsPerYear: payMonthsPerYear, profile: profile,
-            countryCode: countryCode, currencyCode: currencyCode)
+            countryCode: countryCode, currencyCode: currencyCode,
+            bonusBaseMonthly: bonusBaseMonthly, socialBasePerMonth: socialBasePerMonth)
         return result.available ? result.months : nil
+    }
+
+    /// 把有偿加班毛额并入对应月（仅并入，不重复加）；otByMonth 为 nil 时原样返回。
+    private static func mergedGross(_ grossPerMonth: [Money], otByMonth: [Double]?) -> [Money] {
+        guard let otByMonth else { return grossPerMonth }
+        var gross = grossPerMonth
+        for month in 1...12 {
+            let extra = otByMonth[month - 1]
+            if extra > 0 { gross[month - 1] = gross[month - 1] + Money(yuan: extra) }
+        }
+        return gross
     }
 
     private static func computeResult(
@@ -238,15 +260,20 @@ struct EarningsEngine {
         payMonthsPerYear: Int,
         profile: TaxProfile,
         countryCode: String,
-        currencyCode: String
+        currencyCode: String,
+        bonusBaseMonthly: Money? = nil,
+        socialBasePerMonth: [Money]? = nil
     ) -> NetPayCalculator.Result {
+        // grossPerMonth 已由调用方合并好加班毛额（computeNet 走 mergedGross；netBlocked 走 mergedGross(otFinalByMonth)）。
         _ = otByMonth
         return NetPayCalculator.compute(
             grossPerMonth: grossPerMonth,
             payMonthsPerYear: payMonthsPerYear,
             profile: profile,
             countryCode: countryCode,
-            currencyCode: currencyCode)
+            currencyCode: currencyCode,
+            bonusBaseMonthly: bonusBaseMonthly,
+            socialBasePerMonth: socialBasePerMonth)
     }
 
     var perSecondRate: Double {
@@ -284,10 +311,15 @@ struct EarningsEngine {
         if !hasActive { return netMonths }
         var combined = otFinalByMonth
         for m in 0..<12 { combined[m] += active[m] }
+        let extraMonths = max(config.payMonthsPerYear - 12, 0)
+        let bonusBaseMonthly: Money? = extraMonths > 0
+            ? Money(yuan: schedule.monthlyGross(on: calendar.date(from: DateComponents(year: yearIndex, month: 12, day: 31)) ?? now))
+            : nil
         return Self.computeNet(
             grossPerMonth: regularGrossPerMonth, otByMonth: combined,
             payMonthsPerYear: config.payMonthsPerYear, profile: config.tax,
-            countryCode: config.countryCode, currencyCode: config.currencyCode)
+            countryCode: config.countryCode, currencyCode: config.currencyCode,
+            bonusBaseMonthly: bonusBaseMonthly, socialBasePerMonth: regularGrossPerMonth)
     }
 
     /// 某月「仅正常」净额（元），供正常秒薪/日薪/away 使用（不混加班）。

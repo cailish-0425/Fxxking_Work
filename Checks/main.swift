@@ -1762,9 +1762,172 @@ do {
     expectClose(sEnded.totalGross, s60.totalGross, "结束前后账期已赚连续不重复", tolerance: 0.05)
 }
 
+// MARK: - 菜单栏隐私标题
+
+do {
+    // 用一个固定的快照，避免依赖真实时钟。今日已赚 211.11、本月已赚 3377.69。
+    var e = Earnings()
+    e.dayEarned = 211.11
+    e.monthEarned = 3377.69
+    e.dayFraction = 0.0
+    e.monthFraction = 0.2381
+    e.yearFraction = 0.7254
+
+    var c = Configuration()
+    c.currencyCode = "CNY"
+
+    // surface 映射：只有金额档位才有 surface，百分比档位为 nil。
+    expect(MenuBarLabel.surface(for: .todayAmount) == "menu.day", "今日金额映射到 menu.day")
+    expect(MenuBarLabel.surface(for: .monthAmount) == "progress.month", "本月金额映射到 progress.month")
+    expect(MenuBarLabel.surface(for: .todayPercent) == nil, "今日百分比不是金额，无 surface")
+    expect(MenuBarLabel.surface(for: .monthPercent) == nil, "本月百分比不是金额，无 surface")
+    expect(MenuBarLabel.surface(for: .yearPercent) == nil, "本年百分比不是金额，无 surface")
+
+    // 隐私关闭：任何档位都显示真实值。
+    c.menuBarDisplay = .todayAmount
+    let offRaw = MenuBarLabel.text(config: c, earnings: e, privacyEnabled: false, isRevealed: false)
+    expect(offRaw.contains("211.11"), "隐私关闭时今日金额直接显示真实值：\(offRaw)")
+
+    // 隐私开启 + 未揭示：金额掩码。
+    let masked = MenuBarLabel.text(config: c, earnings: e, privacyEnabled: true, isRevealed: false)
+    expect(masked == "••••", "隐私开启未揭示时显示掩码：\(masked)")
+
+    // 隐私开启 + 已揭示：显示实时值（且不是掩码）。
+    let revealed = MenuBarLabel.text(config: c, earnings: e, privacyEnabled: true, isRevealed: true)
+    expect(revealed.contains("211.11"), "揭示后显示真实金额：\(revealed)")
+    expect(revealed != masked, "揭示前后文案必须不同")
+
+    // 本月金额档位同样 mask→reveal。
+    c.menuBarDisplay = .monthAmount
+    let mMasked = MenuBarLabel.text(config: c, earnings: e, privacyEnabled: true, isRevealed: false)
+    let mRevealed = MenuBarLabel.text(config: c, earnings: e, privacyEnabled: true, isRevealed: true)
+    expect(mMasked == "••••", "本月金额未揭示时掩码")
+    expect(mRevealed.contains("3377.69") || mRevealed.contains("3,377.69") || mRevealed.contains("3,378"),
+           "本月金额揭示后显示真实值：\(mRevealed)")
+
+    // 百分比档位不受隐私影响：无论是否揭示都显示百分比。
+    c.menuBarDisplay = .todayPercent
+    let pClosed = MenuBarLabel.text(config: c, earnings: e, privacyEnabled: true, isRevealed: false)
+    let pOpen = MenuBarLabel.text(config: c, earnings: e, privacyEnabled: true, isRevealed: true)
+    expect(pClosed == pOpen, "百分比档位不随揭示状态变化")
+    expect(!pClosed.contains("••••"), "百分比档位永不被掩码：\(pClosed)")
+    expect(pClosed.contains("%"), "百分比档位输出百分号：\(pClosed)")
+
+    c.menuBarDisplay = .yearPercent
+    let yClosed = MenuBarLabel.text(config: c, earnings: e, privacyEnabled: true, isRevealed: false)
+    expect(!yClosed.contains("••••"), "本年百分比不被掩码：\(yClosed)")
+
+    // 原始文案与 final 文案的关系：隐私关闭时 final == raw。
+    c.menuBarDisplay = .todayAmount
+    expect(MenuBarLabel.text(config: c, earnings: e, privacyEnabled: false, isRevealed: false)
+           == MenuBarLabel.rawText(config: c, earnings: e),
+           "隐私关闭时标题等于原始文案")
+}
+
+// MARK: - 额外薪不重复计入12月加班
+
+do {
+    var profile = TaxProfile()
+    profile.social.pension = .disabled
+    profile.social.medical = .disabled
+    profile.social.medicalFixed = .disabled
+    profile.social.unemployment = .disabled
+    profile.social.housingFund = .disabled
+    profile.monthlySpecialDeduction = .zero
+    profile.monthlyOtherDeduction = .zero
+    profile.employmentStartMonth = 1
+    profile.bonusMonth = 12
+
+    let normalMonths = Array(repeating: Money.yuan(10000), count: 12)
+    var overtimeMonths = normalMonths
+    overtimeMonths[11] = overtimeMonths[11] + Money.yuan(250)
+
+    for salaryMonths in [12, 14, 16] {
+        let base = NetPayCalculator.compute(
+            grossPerMonth: normalMonths, payMonthsPerYear: salaryMonths,
+            profile: profile, countryCode: "CN", currencyCode: "CNY",
+            bonusBaseMonthly: .yuan(10000), socialBaseMonthly: .yuan(10000))
+        let paid = NetPayCalculator.compute(
+            grossPerMonth: overtimeMonths, payMonthsPerYear: salaryMonths,
+            profile: profile, countryCode: "CN", currencyCode: "CNY",
+            bonusBaseMonthly: .yuan(10000), socialBaseMonthly: .yuan(10000))
+        expect(base.available && paid.available, "\(salaryMonths)薪12月加班可计算")
+        expectClose(paid.yearGross.doubleYuan - base.yearGross.doubleYuan, 250,
+                    "\(salaryMonths)薪加班250不因额外薪重复放大")
+        expectClose(paid.yearNet.doubleYuan - base.yearNet.doubleYuan, 225,
+                    "\(salaryMonths)薪加班250扣本算例增量税25后到手225")
+
+        var config = baseConfig()
+        config.salaryAmount = 10000
+        config.countryCode = "CN"
+        config.payMonthsPerYear = salaryMonths
+        config.payMode = .net
+        config.tax = profile
+        let now = date("2026-12-31 18:00:00")
+        let before = engine(config, now: now).snapshot(at: now)
+        config.overtimeSessions = [OvertimeSession(
+            start: date("2026-12-03 18:30:00"), end: date("2026-12-03 20:30:00"),
+            kind: .paid, multiplier: 2, baseHourlyGross: 62.5, currencyCode: "CNY")]
+        let after = engine(config, now: now).snapshot(at: now)
+        expectClose(after.yearTotal - before.yearTotal, 225,
+                    "\(salaryMonths)薪引擎保持正常奖金基准，加班只合并一次")
+    }
+}
+
+// 工作日的开始加班入口：上班前、午休、正常上班均拒绝，规定下班及休息日允许。
+do {
+    var config = Configuration()
+    config.useAutoHolidays = false
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(secondsFromGMT: 8 * 3600)!
+    let work = WorkCalendar(config: config, autoHolidays: [], autoMakeupWorkdays: [], calendar: calendar)
+    func timestamp(_ day: Int, _ hour: Int, _ minute: Int = 0) -> Date {
+        calendar.date(from: DateComponents(year: 2026, month: 11, day: day, hour: hour, minute: minute))!
+    }
+    for hour in [8, 10, 12, 13, 17] {
+        expect(!OvertimeLedger.canStart(at: timestamp(9, hour), config: config, workCalendar: work, calendar: calendar),
+               "正常工作日下班前不能开启加班")
+    }
+    expect(OvertimeLedger.canStart(at: timestamp(9, 18), config: config, workCalendar: work, calendar: calendar), "下班边界可开启加班")
+    expect(OvertimeLedger.canStart(at: timestamp(8, 10), config: config, workCalendar: work, calendar: calendar), "休息日可显式开启加班")
+}
+
+
+// 工资历史的自动缴费按各月正常工资，观察日期不能回写全年。
+do {
+    let normal = Array(repeating: Money.yuan(10000), count: 6) + Array(repeating: Money.yuan(20000), count: 6)
+    let profile = TaxProfile()
+    let result = NetPayCalculator.compute(
+        grossPerMonth: normal, payMonthsPerYear: 12, profile: profile,
+        countryCode: "CN", currencyCode: "CNY", socialBasePerMonth: normal)
+    expect(result.available, "逐月自动社保可计算")
+    expectClose(result.yearNet.doubleYuan, 145377.60, "1万/2万历史逐月社保后的全年净额")
+    expectClose(result.months[0].socialTotal.doubleYuan, 1553, "1万元月份个人缴费1553")
+    expectClose(result.months[6].socialTotal.doubleYuan, 3103, "2万元月份个人缴费3103")
+    var config = baseConfig()
+    config.salaryAmount = 20000
+    config.payMode = .net
+    config.tax = profile
+    config.salaryBaseline = SalaryBaseline(amount: 10000, period: .monthly, payMonthsPerYear: 12)
+    config.salaryHistory = [SalaryVersion(effectiveDate: "2026-07-01", amount: 20000, period: .monthly, payMonthsPerYear: 12)]
+    for anchor in ["2026-01-15 18:00:00", "2026-06-15 18:00:00", "2026-08-15 18:00:00", "2026-12-31 18:00:00"] {
+        let now = date(anchor)
+        expectClose(engine(config, now: now).snapshot(at: now).yearTotal, 145377.60,
+                    "历史全年税后估算不随观察日期变化")
+    }
+    for invalidCount in [11, 13] {
+        let invalid = NetPayCalculator.compute(
+            grossPerMonth: normal, payMonthsPerYear: 12, profile: profile,
+            countryCode: "CN", currencyCode: "CNY",
+            socialBasePerMonth: Array(repeating: .yuan(10000), count: invalidCount))
+        expect(!invalid.available && !invalid.blocked.isEmpty, "显式社保月份数量错误应阻塞")
+    }
+}
+
 print("\n\(checks - failures)/\(checks) 项检查通过")
 if failures > 0 {
     print("\(failures) 项失败")
     exit(1)
 }
+
 print("全部通过")

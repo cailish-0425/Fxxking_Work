@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 @main
@@ -7,6 +8,7 @@ struct Fxxking_WorkApp: App {
     @StateObject private var ticker: EarningsTicker
     @StateObject private var privacy: PrivacyController
     @StateObject private var overtime: OvertimeController
+    @StateObject private var updater: UpdaterService
 
     init() {
         let settings = SettingsStore()
@@ -15,11 +17,13 @@ struct Fxxking_WorkApp: App {
         let privacy = PrivacyController(enabled: settings.config.privacyModeEnabled)
         privacy.bind(to: settings)
         let overtime = OvertimeController(settings: settings) { ticker.engine }
+        let updater = UpdaterService()
         _settings = StateObject(wrappedValue: settings)
         _holidays = StateObject(wrappedValue: holidays)
         _ticker = StateObject(wrappedValue: ticker)
         _privacy = StateObject(wrappedValue: privacy)
         _overtime = StateObject(wrappedValue: overtime)
+        _updater = StateObject(wrappedValue: updater)
     }
 
     var body: some Scene {
@@ -33,15 +37,15 @@ struct Fxxking_WorkApp: App {
                 // DatePicker、日历这些系统控件自己排版，得把语言选择也交给它们。
                 .environment(\.locale, Loc.locale)
                 .preferredColorScheme(settings.config.appearance.colorScheme)
+                .background(MenuBarPanelVisibility(
+                    onOpen: { privacy.revealMenuBarAmount(settings.config.menuBarDisplay) },
+                    onClose: { privacy.resetForLifecycle() }
+                ))
                 .onDisappear { privacy.resetForLifecycle() }
         } label: {
-            let text = MenuBarLabel.text(config: settings.config, earnings: ticker.earnings, privacy: privacy)
-            let suffix = MenuBarLabel.modeSuffix(config: settings.config, engine: ticker.engine)
-            if settings.config.showMenuBarIcon {
-                Text("\(Image(systemName: "dollarsign.circle.fill")) \(text)\(suffix)")
-            } else {
-                Text("\(text)\(suffix)")
-            }
+            // 用独立 Observable 视图：privacy 的 @Published 变化要立刻反映到标题，
+            // 而不是等 ticker 下一秒推快照才顺带更新。
+            MenuBarTitleView(config: settings.config, earnings: ticker.earnings, engine: ticker.engine, privacy: privacy)
         }
         .menuBarExtraStyle(.window)
 
@@ -52,9 +56,39 @@ struct Fxxking_WorkApp: App {
                 .environmentObject(ticker)
                 .environmentObject(privacy)
                 .environmentObject(overtime)
+                .environmentObject(updater)
                 .environment(\.locale, Loc.locale)
                 .preferredColorScheme(settings.config.appearance.colorScheme)
                 .onDisappear { privacy.resetForLifecycle() }
+        }
+    }
+}
+
+/// 菜单栏标题视图。
+///
+/// `MenuBarExtra` 的 label 里直接读 `privacy.isRevealed(...)` 是不够的：label 不是
+/// `PrivacyController` 的观察者，揭示状态变了不会触发重绘，标题要等到 ticker 下一轮
+/// 每秒刷新才更新（甚至在 ticker 不推进时永远不变）。这里把 privacy 作为
+/// `@ObservedObject`，让 `revealedSurfaces` 的任何变化都直接驱动标题重建。
+private struct MenuBarTitleView: View {
+    let config: Configuration
+    let earnings: Earnings
+    let engine: EarningsEngine
+    @ObservedObject var privacy: PrivacyController
+
+    var body: some View {
+        let text = MenuBarLabel.text(
+            config: config,
+            earnings: earnings,
+            privacyEnabled: privacy.enabled,
+            isRevealed: MenuBarLabel.surface(for: config.menuBarDisplay)
+                .map { privacy.isRevealed($0) } ?? false
+        )
+        let suffix = MenuBarLabel.modeSuffix(config: config, engine: engine)
+        if config.showMenuBarIcon {
+            Text("\(Image(systemName: "dollarsign.circle.fill")) \(text)\(suffix)")
+        } else {
+            Text("\(text)\(suffix)")
         }
     }
 }
@@ -67,38 +101,5 @@ private extension AppAppearance {
         case .light: return .light
         case .dark: return .dark
         }
-    }
-}
-
-enum MenuBarLabel {
-    @MainActor
-    static func text(config: Configuration, earnings: Earnings, privacy: PrivacyController) -> String {
-        let raw: String
-        switch config.menuBarDisplay {
-        case .todayAmount:
-            raw = Formatters.currency(earnings.dayEarned, code: config.currencyCode)
-        case .todayPercent:
-            raw = Formatters.percent(earnings.dayFraction, fractionDigits: 1)
-        case .monthAmount:
-            raw = Formatters.currency(earnings.monthEarned, code: config.currencyCode, fractionDigits: 0)
-        case .monthPercent:
-            raw = Formatters.percent(earnings.monthFraction, fractionDigits: 1)
-        case .yearPercent:
-            raw = Formatters.percent(earnings.yearFraction, fractionDigits: 1)
-        }
-        // 隐私模式：菜单栏标题在打开面板前就能看见，金额必须掩码。
-        // 菜单栏无点击揭示交互，开启隐私即恒定掩码金额（百分比/进度非金额不掩）。
-        let isAmount = config.menuBarDisplay == .todayAmount
-            || config.menuBarDisplay == .monthAmount
-        if privacy.enabled, isAmount {
-            return "••••"
-        }
-        return raw
-    }
-
-    /// 税后口径标识：net 生效标「税后」；请求 net 但被阻塞（显示的是税前）标「税前」，避免静默回退。
-    static func modeSuffix(config: Configuration, engine: EarningsEngine) -> String {
-        guard config.payMode == .net else { return "" }
-        return engine.isNetActive ? Loc.t("menu.mode.net") : Loc.t("menu.mode.gross")
     }
 }

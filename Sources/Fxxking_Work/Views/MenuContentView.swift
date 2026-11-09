@@ -78,6 +78,9 @@ struct MenuContentView: View {
                             .font(.caption)
                     }
                     .buttonStyle(.borderless)
+                    .disabled(!OvertimeLedger.canStart(
+                        at: now, config: settings.config,
+                        workCalendar: ticker.engine.workCalendar, calendar: ticker.engine.calendar))
                 }
             }
 
@@ -379,7 +382,6 @@ struct MenuContentView: View {
 }
 
 struct ProgressRow: View {
-    @EnvironmentObject private var privacy: PrivacyController
     let surface: String
     let title: String
     let fraction: Double
@@ -429,15 +431,11 @@ struct ProgressRow: View {
     }
 
     private var detailText: some View {
-        Text(privacy.isRevealed(surface) ? detail : "••••")
+        PrivacyAmount(surface: surface) { detail }
             .font(.caption2)
             .foregroundStyle(.tertiary)
             .monospacedDigit()
             .lineLimit(1)
-            .onTapGesture {
-                privacy.toggle(surface)
-            }
-            .accessibilityLabel(privacy.isRevealed(surface) ? Loc.t("privacy.hide") : Loc.t("privacy.reveal"))
     }
 
     private var percentText: some View {

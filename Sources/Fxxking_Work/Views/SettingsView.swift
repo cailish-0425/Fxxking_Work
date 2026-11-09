@@ -41,6 +41,8 @@ struct SettingsView: View {
 // MARK: - 版本说明
 
 private struct AboutTab: View {
+    @EnvironmentObject private var updater: UpdaterService
+
     var body: some View {
         Form {
             Section {
@@ -49,6 +51,28 @@ private struct AboutTab: View {
                 LabeledContent(Loc.t("about.maintainer"), value: "@cailish-0425")
             } header: {
                 Text(Loc.t("about.section.app"))
+            }
+
+            Section {
+                if let issue = updater.configurationIssue {
+                    // 构建缺生产公钥/feed 时这里直接说明，而不是让 Sparkle 弹「联系开发者」。
+                    Text(issue)
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    Button(Loc.t("about.updater.check")) {
+                        updater.checkForUpdates()
+                    }
+                    .disabled(!updater.canCheckForUpdates)
+                    Toggle(Loc.t("about.updater.auto"), isOn: autoCheckBinding)
+                    Text(Loc.t("about.updater.auto.detail"))
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            } header: {
+                Text(Loc.t("about.section.updates"))
             }
 
             Section {
@@ -67,6 +91,14 @@ private struct AboutTab: View {
             }
         }
         .formStyle(.grouped)
+    }
+
+    /// 自动检查开关：写入 Sparkle 自己的设置，同时同步回本地状态。
+    private var autoCheckBinding: Binding<Bool> {
+        Binding(
+            get: { updater.automaticallyChecksForUpdates },
+            set: { updater.setAutomaticallyChecks($0) }
+        )
     }
 
     /// 版本 / 构建号，从实际 Bundle 读取；缺失时回退占位符。
@@ -104,10 +136,10 @@ private struct SalaryTab: View {
                 }
                 .pickerStyle(.segmented)
                 SettingsRow(title: Loc.t("salary.amount")) {
-                    PrivacyAmountField(
-                        surface: "salary.amount",
-                        label: Loc.t("salary.amount"),
-                        yuan: $settings.config.salaryAmount)
+                    // 标签由 SettingsRow 单独渲染；这里隐藏重复 label，但保留 AX 名称。
+                    TextField("", value: $settings.config.salaryAmount, format: .number)
+                        .labelsHidden()
+                        .accessibilityLabel(Loc.t("salary.amount"))
                         .multilineTextAlignment(.trailing)
                 }
                 SettingsRow(title: Loc.t("salary.period")) {
@@ -148,21 +180,15 @@ private struct SalaryTab: View {
             Section {
                 LabeledContent(Loc.t("salary.workdaysThisMonth"), value: Loc.t("menu.days", ticker.engine.workdaysThisMonth))
                 LabeledContent(Loc.t("salary.perDay")) {
-                    PrivacyAmount(surface: "salary.perDay") {
-                        Formatters.currency(
-                            ticker.earnings.dayTotal > 0 ? ticker.earnings.dayTotal : dailyEstimate,
-                            code: settings.config.currencyCode)
-                    }
+                    Text(Formatters.currency(
+                        ticker.earnings.perSecond * Double(settings.config.paidMinutesPerDay) * 60,
+                        code: settings.config.currencyCode))
                 }
                 LabeledContent(Loc.t("salary.perHour")) {
-                    PrivacyAmount(surface: "salary.perHour") {
-                        Formatters.currency(ticker.engine.perSecondRate * 3600, code: settings.config.currencyCode)
-                    }
+                    Text(Formatters.currency(ticker.earnings.perSecond * 3600, code: settings.config.currencyCode))
                 }
                 LabeledContent(Loc.t("salary.perSecond")) {
-                    PrivacyAmount(surface: "salary.perSecond") {
-                        Formatters.currency(ticker.engine.perSecondRate, code: settings.config.currencyCode, fractionDigits: 4)
-                    }
+                    Text(Formatters.currency(ticker.earnings.perSecond, code: settings.config.currencyCode, fractionDigits: 4))
                 }
             } header: {
                 Text(Loc.t("salary.section.derived"))
@@ -199,7 +225,7 @@ private struct SalaryTab: View {
                 .environmentObject(ticker)
                 .environmentObject(privacy)
                 .environmentObject(overtimeController)
-        }
+            }
     }
 
     /// 加班控制器（从环境取，主面板与设置页共用同一台账）。
@@ -357,9 +383,7 @@ private struct SalaryTab: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
             Spacer(minLength: 8)
-            PrivacyAmount(surface: "salary.history.\(version.id.uuidString)") {
-                Formatters.currency(version.amount, code: settings.config.currencyCode)
-            }
+            Text(Formatters.currency(version.amount, code: settings.config.currencyCode))
             .font(.caption)
             .monospacedDigit()
             .frame(minWidth: 90, alignment: .trailing)
@@ -389,10 +413,6 @@ private struct SalaryTab: View {
         DayKeyCoder.current.key(for: Date())
     }
 
-    private var dailyEstimate: Double {
-        let days = ticker.engine.workdaysThisMonth
-        return days > 0 ? settings.config.monthlyPay / Double(days) : 0
-    }
 }
 
 /// 加班历史二级页：列起止/时长/有偿无偿/倍率/加班工资或无偿损失；补录、纠错、删除、撤销。
@@ -491,13 +511,7 @@ private struct OvertimeHistoryView: View {
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
             }
-            PrivacyAmount(surface: "overtime.history.\(session.id.uuidString)") {
-                let hours = session.elapsedSeconds(at: Date()) / 3600
-                let amount = session.kind == .paid
-                    ? hours * session.baseHourlyGross * Double(session.multiplier)
-                    : hours * session.baseHourlyGross
-                return Formatters.currency(amount, code: session.currencyCode)
-            }
+            Text(overtimeAmount(session))
             .font(.caption)
             .monospacedDigit()
             .frame(minWidth: 90, alignment: .trailing)
@@ -518,6 +532,15 @@ private struct OvertimeHistoryView: View {
             }
             .buttonStyle(.borderless)
         }
+    }
+
+    /// 单条加班记录的金额文案：有偿按基准 × 倍率，无偿按单倍基准折算机会损失。
+    private func overtimeAmount(_ session: OvertimeSession) -> String {
+        let hours = session.elapsedSeconds(at: Date()) / 3600
+        let amount = session.kind == .paid
+            ? hours * session.baseHourlyGross * Double(session.multiplier)
+            : hours * session.baseHourlyGross
+        return Formatters.currency(amount, code: session.currencyCode)
     }
 
     private func timeRange(_ session: OvertimeSession, stop: Date) -> String {
@@ -606,7 +629,7 @@ private struct OvertimeSessionEditor: View {
                 }
                 .pickerStyle(.segmented)
             }
-            PrivacyAmountField(surface: "overtime.editor.base", label: Loc.t("overtime.base"), yuan: baseBinding)
+            TextField(Loc.t("overtime.base"), value: baseBinding, format: .number)
             if baseIsAuto {
                 Text(Loc.t("overtime.base.auto"))
                     .font(.caption2)
@@ -698,7 +721,7 @@ private struct SalaryVersionEditor: View {
             Text(version == nil ? Loc.t("salary.history.add") : Loc.t("salary.history.edit"))
                 .font(.headline)
 
-            PrivacyAmountField(surface: "salary.history.editor.amount", label: Loc.t("salary.history.amount"), yuan: $amount)
+            TextField(Loc.t("salary.history.amount"), value: $amount, format: .number)
             Picker(Loc.t("salary.history.period"), selection: $period) {
                 ForEach(SalaryPeriod.allCases) { Text($0.label).tag($0) }
             }
@@ -783,7 +806,7 @@ private struct TaxTab: View {
             if !result.blocked.isEmpty {
                 Section {
                     ForEach(Array(result.blocked.enumerated()), id: \.offset) { i, message in
-                        PrivacyAmount(surface: "tax.blocked.\(i)") { message }
+                        Text(message)
                             .font(.caption)
                             .foregroundStyle(.red)
                     }
@@ -794,7 +817,7 @@ private struct TaxTab: View {
             if !result.warnings.isEmpty {
                 Section {
                     ForEach(Array(result.warnings.enumerated()), id: \.offset) { i, message in
-                        PrivacyAmount(surface: "tax.warning.\(i)") { message }
+                        Text(message)
                             .font(.caption)
                             .foregroundStyle(.orange)
                     }
@@ -813,19 +836,19 @@ private struct TaxTab: View {
                 DisclosureGroup(isExpanded: $showingTaxSocial) {
                     baseEditor(Loc.t("salary.tax.pension"), $settings.config.tax.social.pension,
                                 rate: $settings.config.tax.social.pensionRateBp, resolved: resolved.pension,
-                                ratePresets: [800], surface: "tax.pension")
+                                ratePresets: [800])
                     baseEditor(Loc.t("salary.tax.medical"), $settings.config.tax.social.medical,
                                 rate: $settings.config.tax.social.medicalRateBp, resolved: resolved.medical,
-                                ratePresets: [200], surface: "tax.medical")
+                                ratePresets: [200])
                     baseEditor(Loc.t("salary.tax.medicalFixed"), $settings.config.tax.social.medicalFixed,
                                 rate: nil, resolved: resolved.medicalFixed, isFixed: true,
-                                ratePresets: nil, surface: "tax.medicalFixed")
+                                ratePresets: nil)
                     baseEditor(Loc.t("salary.tax.unemployment"), $settings.config.tax.social.unemployment,
                                 rate: $settings.config.tax.social.unemploymentRateBp, resolved: resolved.unemployment,
-                                ratePresets: [50], surface: "tax.unemployment")
+                                ratePresets: [50])
                     baseEditor(Loc.t("salary.tax.housingFund"), $settings.config.tax.social.housingFund,
                                 rate: $settings.config.tax.social.housingFundRateBp, resolved: resolved.housingFund,
-                                ratePresets: housingFundPresets, surface: "tax.housingFund")
+                                ratePresets: housingFundPresets)
                 } label: {
                     Text(Loc.t("salary.tax.social"))
                 }
@@ -835,15 +858,15 @@ private struct TaxTab: View {
             Section {
                 DisclosureGroup(isExpanded: $showingTaxDeductions) {
                     SettingsRow(title: Loc.t("salary.tax.special")) {
-                        PrivacyAmountField(surface: "tax.special",
-                                           label: Loc.t("salary.tax.special"),
-                                           yuan: yuanBinding($settings.config.tax.monthlySpecialDeduction))
+                        TextField("", value: yuanBinding($settings.config.tax.monthlySpecialDeduction), format: .number)
+                            .labelsHidden()
+                            .accessibilityLabel(Loc.t("salary.tax.special"))
                             .multilineTextAlignment(.trailing)
                     }
                     SettingsRow(title: Loc.t("salary.tax.other")) {
-                        PrivacyAmountField(surface: "tax.other",
-                                           label: Loc.t("salary.tax.other"),
-                                           yuan: yuanBinding($settings.config.tax.monthlyOtherDeduction))
+                        TextField("", value: yuanBinding($settings.config.tax.monthlyOtherDeduction), format: .number)
+                            .labelsHidden()
+                            .accessibilityLabel(Loc.t("salary.tax.other"))
                             .multilineTextAlignment(.trailing)
                     }
                     Stepper(value: $settings.config.tax.employmentStartMonth, in: 1...12) {
@@ -872,7 +895,7 @@ private struct TaxTab: View {
     private func baseEditor(
         _ title: String, _ base: Binding<SocialBase>, rate: Binding<Int>?,
         resolved: NetPayCalculator.ResolvedItem, isFixed: Bool = false,
-        ratePresets: [Int]?, surface: String
+        ratePresets: [Int]?
     ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             rowLabel(title) {
@@ -887,27 +910,24 @@ private struct TaxTab: View {
                 .accessibilityLabel(title)
             }
             if case .manual = base.wrappedValue {
-                // 手填输入框：固定额与基数用各自词条；金额编辑走隐私掩码（点掩码才变编辑器）。
+                // 手填输入框：固定额与基数用各自词条，直接可编辑（设置页不套隐私掩码）。
                 let fieldLabel = isFixed ? Loc.t("salary.tax.medicalFixed") : Loc.t("salary.tax.base")
                 rowLabel(fieldLabel) {
-                    PrivacyAmountField(surface: surface,
-                                       label: fieldLabel,
-                                       yuan: yuanBinding(manualBinding(base)))
+                    TextField("", value: yuanBinding(manualBinding(base)), format: .number)
+                        .labelsHidden()
+                        .accessibilityLabel(fieldLabel)
                 }
             }
             if let rate, let ratePresets, base.wrappedValue != .disabled {
                 // 固定档位选择 + 自定义手输：档位直接选，非预设值显示「自定义」并保留原 bp 值。
                 ratePicker(
-                    label: Loc.t("salary.tax.rate"), rate: rate, presets: ratePresets,
-                    surface: surface)
+                    label: Loc.t("salary.tax.rate"), rate: rate, presets: ratePresets)
             } else if let rate, base.wrappedValue != .disabled {
                 // 无预设档位（custom 地区）：直接数字输入。
-                rateField(label: Loc.t("salary.tax.rate"), rate: rate, surface: surface)
+                rateField(label: Loc.t("salary.tax.rate"), rate: rate)
             }
-            // 有效值与状态（读 resolve，不复制算法）。含有效基数/缴费额，隐私下掩码，点该项显示。
-            PrivacyAmount(surface: surface + ".resolved") {
-                statusText(for: resolved)
-            }
+            // 有效值与状态（读 resolve，不复制算法）。含有效基数/缴费额，设置页直接可读。
+            Text(statusText(for: resolved))
             .font(.caption2)
             .foregroundStyle(resolved.state == .disabled ? .tertiary : .secondary)
             .monospacedDigit()
@@ -921,7 +941,7 @@ private struct TaxTab: View {
 
     /// 比例档位 Picker + 自定义输入，去掉 0.01% 步进器。
     @ViewBuilder
-    private func ratePicker(label: String, rate: Binding<Int>, presets: [Int], surface: String) -> some View {
+    private func ratePicker(label: String, rate: Binding<Int>, presets: [Int]) -> some View {
         rowLabel(label) {
             Picker("", selection: rateBinding(rate, presets: presets)) {
                 ForEach(presets, id: \.self) { bp in
@@ -936,6 +956,7 @@ private struct TaxTab: View {
         if !presets.contains(rate.wrappedValue) {
             rowLabel(Loc.t("salary.tax.manual")) {
                 TextField("", value: bpPercentBinding(rate), format: .number)
+                    .labelsHidden()
                     .multilineTextAlignment(.trailing)
                     .accessibilityLabel(label)
             }
@@ -943,9 +964,10 @@ private struct TaxTab: View {
     }
 
     @ViewBuilder
-    private func rateField(label: String, rate: Binding<Int>, surface: String) -> some View {
+    private func rateField(label: String, rate: Binding<Int>) -> some View {
         rowLabel(label) {
             TextField("", value: bpPercentBinding(rate), format: .number)
+                .labelsHidden()
                 .multilineTextAlignment(.trailing)
                 .accessibilityLabel(label)
         }
@@ -1014,16 +1036,16 @@ private struct TaxTab: View {
         Section {
             if result.available, let month = result.months.first(where: { $0.gross.cents > 0 }) {
                 LabeledContent(Loc.t("salary.tax.gross")) {
-                    PrivacyAmount(surface: "tax.detail.gross") { yuan(month.gross.doubleYuan) }
+                    Text(yuan(month.gross.doubleYuan))
                 }
                 LabeledContent(Loc.t("salary.tax.socialTotal")) {
-                    PrivacyAmount(surface: "tax.detail.social") { yuan(month.socialTotal.doubleYuan) }
+                    Text(yuan(month.socialTotal.doubleYuan))
                 }
                 LabeledContent(Loc.t("salary.tax.tax")) {
-                    PrivacyAmount(surface: "tax.detail.tax") { yuan(month.tax.doubleYuan) }
+                    Text(yuan(month.tax.doubleYuan))
                 }
                 LabeledContent(Loc.t("salary.tax.net")) {
-                    PrivacyAmount(surface: "tax.detail.net") { yuan(month.net.doubleYuan) }
+                    Text(yuan(month.net.doubleYuan))
                 }
             } else {
                 Text(Loc.t("salary.tax.blocked")).font(.caption).foregroundStyle(.secondary)
@@ -1035,7 +1057,7 @@ private struct TaxTab: View {
         Section {
             if result.available {
                 LabeledContent(Loc.t("salary.tax.year")) {
-                    PrivacyAmount(surface: "tax.detail.year") { yuan(result.yearNet.doubleYuan) }
+                    Text(yuan(result.yearNet.doubleYuan))
                 }
                 Text(Loc.t("salary.tax.note")).font(.caption2).foregroundStyle(.secondary)
             }

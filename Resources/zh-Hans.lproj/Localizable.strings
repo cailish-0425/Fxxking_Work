@@ -58,6 +58,11 @@
 "about.summary" = "设置页与版本说明。";
 "about.section.links" = "链接";
 "about.github" = "GitHub";
+"about.section.updates" = "更新";
+"about.updater.check" = "检查更新…";
+"about.updater.auto" = "自动检查更新";
+"about.updater.auto.detail" = "默认关闭。开启后会在后台检查，但安装前仍会询问你。";
+"about.updater.unconfigured" = "更新器未配置：缺少 %@";
 
 /* MARK: - 薪资 */
 
@@ -66,7 +71,7 @@
 "salary.period" = "计薪周期";
 "salary.period.monthly" = "月薪";
 "salary.period.annual" = "年薪";
-"salary.payMonths.hint" = "13 薪、14 薪填对应的月数，年终奖会按进度摊到全年。";
+"salary.payMonths.hint" = "填写全年发薪月数；额外薪资按计薪模式估算。";
 "salary.section.region" = "地区";
 "salary.country" = "国家 / 地区";
 "salary.currency" = "货币";
@@ -180,7 +185,7 @@
 /* MARK: - 隐私模式 */
 "privacy.section" = "隐私";
 "privacy.toggle" = "隐私模式";
-"privacy.toggle.detail" = "默认掩码所有金额，点击金额显示、再点隐藏。";
+"privacy.toggle.detail" = "隐藏菜单栏和主面板金额，点击金额显示、再点隐藏；设置中的金额保持可见。";
 "privacy.reveal" = "显示金额";
 "privacy.hide" = "隐藏金额";
 "privacy.autoHide" = "金额 30 秒后自动隐藏。";

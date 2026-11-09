@@ -27,7 +27,12 @@ final class OvertimeController: ObservableObject {
     @discardableResult
     func start(at: Date, kind: OvertimePayKind, multiplier: Int) -> OvertimeLedgerError? {
         var store = ledger
-        let base = engine().hourlyGrossRate(on: at)
+        let currentEngine = engine()
+        guard OvertimeLedger.canStart(at: at, config: settings.config,
+                                      workCalendar: currentEngine.workCalendar, calendar: currentEngine.calendar) else {
+            return .overlap
+        }
+        let base = currentEngine.hourlyGrossRate(on: at)
         let r = store.start(at: at, kind: kind, multiplier: multiplier,
                             baseHourlyGross: base, currencyCode: settings.config.currencyCode)
         switch r {
@@ -63,6 +68,7 @@ final class OvertimeController: ObservableObject {
                                   workCalendar: engine.workCalendar, calendar: engine.calendar)
         switch r {
         case .success:
+            lastUndo = store.undo
             write(store)
             return nil
         case .failure(let e):
@@ -79,6 +85,7 @@ final class OvertimeController: ObservableObject {
                            workCalendar: engine.workCalendar, calendar: engine.calendar)
         switch r {
         case .success:
+            lastUndo = store.undo
             write(store)
             return nil
         case .failure(let e):

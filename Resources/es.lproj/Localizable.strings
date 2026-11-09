@@ -60,6 +60,11 @@
 "about.summary" = "Página de ajustes y notas de versión.";
 "about.section.links" = "Enlaces";
 "about.github" = "GitHub";
+"about.section.updates" = "Actualizaciones";
+"about.updater.check" = "Buscar actualizaciones…";
+"about.updater.auto" = "Buscar actualizaciones automáticamente";
+"about.updater.auto.detail" = "Desactivado por defecto. Si lo activas, comprueba en segundo plano pero pregunta antes de instalar.";
+"about.updater.unconfigured" = "Actualizador sin configurar: falta %@";
 
 /* MARK: - Pestaña Sueldo */
 
@@ -68,7 +73,7 @@
 "salary.period" = "Periodo de pago";
 "salary.period.monthly" = "Mensual";
 "salary.period.annual" = "Anual";
-"salary.payMonths.hint" = "Escribe 13 o 14 si tienes paga extra; se reparte a lo largo del año.";
+"salary.payMonths.hint" = "Indica cuántas mensualidades se pagan al año; la paga extra se estima según el modo de cálculo.";
 "salary.section.region" = "Región";
 "salary.country" = "País o región";
 "salary.currency" = "Moneda";
@@ -182,7 +187,7 @@
 /* MARK: - 隐私模式 */
 "privacy.section" = "Privacidad";
 "privacy.toggle" = "Modo privacidad";
-"privacy.toggle.detail" = "Oculta todos los importes por defecto. Toca un importe para mostrarlo y otra vez para ocultarlo.";
+"privacy.toggle.detail" = "Oculta los importes de la barra de menús y del panel. Toca un importe para mostrarlo y otra vez para ocultarlo. Los importes de Ajustes siguen visibles.";
 "privacy.reveal" = "Mostrar importe";
 "privacy.hide" = "Ocultar importe";
 "privacy.autoHide" = "Los importes se ocultan a los 30 segundos.";

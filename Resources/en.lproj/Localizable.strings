@@ -60,6 +60,11 @@
 "about.summary" = "Settings page and version notes.";
 "about.section.links" = "Links";
 "about.github" = "GitHub";
+"about.section.updates" = "Updates";
+"about.updater.check" = "Check for Updates…";
+"about.updater.auto" = "Check for updates automatically";
+"about.updater.auto.detail" = "Off by default. When on, the app checks in the background but still asks before installing.";
+"about.updater.unconfigured" = "Updater not configured: missing %@";
 
 /* MARK: - Pay tab */
 
@@ -68,7 +73,7 @@
 "salary.period" = "Pay period";
 "salary.period.monthly" = "Monthly";
 "salary.period.annual" = "Annual";
-"salary.payMonths.hint" = "Enter 13 or 14 if you get a year-end bonus; it is spread across the year.";
+"salary.payMonths.hint" = "Enter the number of paid months per year; extra pay is estimated according to the pay mode.";
 "salary.section.region" = "Region";
 "salary.country" = "Country or region";
 "salary.currency" = "Currency";
@@ -182,7 +187,7 @@
 /* MARK: - 隐私模式 */
 "privacy.section" = "Privacy";
 "privacy.toggle" = "Privacy mode";
-"privacy.toggle.detail" = "Mask all amounts by default. Tap an amount to reveal it, tap again to hide.";
+"privacy.toggle.detail" = "Hide amounts in the menu bar and panel. Click an amount to show it, click again to hide. Amounts in Settings stay visible.";
 "privacy.reveal" = "Show amount";
 "privacy.hide" = "Hide amount";
 "privacy.autoHide" = "Amounts auto-hide after 30 seconds.";

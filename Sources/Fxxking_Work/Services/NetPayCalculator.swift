@@ -306,12 +306,20 @@ enum NetPayCalculator {
     /// 逐月毛额版的 compute：工资历史分段后每个月毛额可能不同（月中/跨月涨薪），
     /// 累计预扣必须按「各月各自毛额」逐月累进，不能用今天工资重复推 12 月。
     /// 13/14 薪仍按既有口径：额外月数并入 bonusMonth 所在月的毛额。
+    /// - `bonusBaseMonthly`：额外薪折算基准月薪（引擎按「年末生效正常工资」统一传入）；
+    ///   默认 nil 回退旧口径（用 `grossPerMonth.last`），保证无历史/无加班调用方行为不变。
+    /// - `socialBasePerMonth`：各月社保 auto 基数对应的「正常工资月薪」（12 个，引擎按工资历史分段传入）；
+    ///   默认 nil 回退旧口径（用 grossPerMonth 各月值）。auto 基数随各月正常工资取值，manual/disabled 不变。
+    /// - `socialBaseMonthly`：兼容参数（单值全月沿用），供旧调用方；socialBasePerMonth 优先。
     static func compute(
         grossPerMonth: [Money],
         payMonthsPerYear: Int,
         profile: TaxProfile,
         countryCode: String,
-        currencyCode: String
+        currencyCode: String,
+        bonusBaseMonthly: Money? = nil,
+        socialBasePerMonth: [Money]? = nil,
+        socialBaseMonthly: Money? = nil
     ) -> Result {
         guard grossPerMonth.count == 12 else {
             var r = Result()
@@ -345,18 +353,53 @@ enum NetPayCalculator {
             result.blocked.append("其他扣除不能为负")
         }
 
-        // 社保参数按「全年代表性月薪」解析一次（取 12 个月里的最大月毛额），
-        // 基数上下限与比例参数是配置属性，不随每月毛额逐月变；auto 基数随月薪，
-        // 但为保持「一次解析、逐月累进」的简单口径，按最大月薪解析后各月沿用。
-        let resolved = resolve(profile: profile, grossMonthly: grossPerMonth.max() ?? .zero)
-        result.resolved = resolved
-        result.blocked.append(contentsOf: resolved.blocked)
-        result.warnings.append(contentsOf: resolved.issues)
+        // 社保：auto 基数随「各月正常工资」逐月取值（工资历史分段），manual/disabled 保持不变。
+        // socialBasePerMonth 显式传入时逐月用它；否则回退 grossPerMonth 各月值（旧口径，含加班时会被抬高）。
+        // socialBaseMonthly 单值全月沿用（旧调用方兼容）。
+        // 显式传入 socialBasePerMonth 但长度非 12 → 参数错误，blocked（不静默忽略）。
+        if let socialBasePerMonth, socialBasePerMonth.count != 12 {
+            result.blocked.append("逐月社保基数必须恰好 12 个月")
+            return result
+        }
+        let socialBases: [Money]
+        if let socialBasePerMonth, socialBasePerMonth.count == 12 {
+            socialBases = socialBasePerMonth
+        } else if let socialBaseMonthly {
+            socialBases = Array(repeating: socialBaseMonthly, count: 12)
+        } else {
+            socialBases = grossPerMonth
+        }
+        // 逐月解析：把每月的正常工资月薪代入 resolve 得到该月缴费；比例/上下限是配置属性统一，
+        // 只有 auto 基数的「取值月薪」逐月变。这里先取各月 resolve，验证其 blocked（手填越上下限等）跨月一致。
+        var perMonthSocial: [SocialDetail] = []
+        var resolvedForUI: ResolvedSocial = .init()
+        var seenBlocked: Set<String> = []
+        var seenWarnings: Set<String> = []
+        for (i, base) in socialBases.enumerated() {
+            let r = resolve(profile: profile, grossMonthly: base)
+            if i == 0 { resolvedForUI = r }
+            for b in r.blocked where !seenBlocked.contains(b) {
+                seenBlocked.insert(b); result.blocked.append(b)
+            }
+            for w in r.issues where !seenWarnings.contains(w) {
+                seenWarnings.insert(w); result.warnings.append(w)
+            }
+            perMonthSocial.append(SocialDetail(
+                pension: r.pension.amount,
+                medical: r.medical.amount,
+                medicalFixed: r.medicalFixed.amount,
+                unemployment: r.unemployment.amount,
+                housingFund: r.housingFund.amount
+            ))
+        }
+        result.resolved = resolvedForUI
 
-        let socialTotal = resolved.total
-        for gross in grossPerMonth where socialTotal.cents > gross.cents && gross.cents > 0 {
-            result.blocked.append(
-                "当月个人缴费合计 \(socialTotal.doubleYuan) 元超过月薪毛额 \(gross.doubleYuan) 元")
+        // 逐月校验：该月个人缴费合计不得超过该月毛额。
+        for (i, gross) in grossPerMonth.enumerated() where gross.cents > 0 {
+            if perMonthSocial[i].total.cents > gross.cents {
+                result.blocked.append(
+                    "当月个人缴费合计 \(perMonthSocial[i].total.doubleYuan) 元超过月薪毛额 \(gross.doubleYuan) 元")
+            }
         }
 
         if !result.blocked.isEmpty {
@@ -377,19 +420,14 @@ enum NetPayCalculator {
             }
             var gross = grossPerMonth[m - 1]
             if m == profile.bonusMonth, bonusMonths > 0 {
-                // 13/14 薪额外部分：按全年最后一个月毛额折算一次，并入发放月。
-                let base = grossPerMonth.last ?? .zero
+                // 13/14 薪额外部分：基准用显式传入的「年末正常月薪」，避免把当月已并入的
+                // 有偿加班毛额误当成年终奖基准重复乘以额外月数；未传则回退 grossPerMonth.last（旧口径）。
+                let base = bonusBaseMonthly ?? (grossPerMonth.last ?? .zero)
                 gross = gross + base * bonusMonths
             }
             entry.gross = gross
-            entry.social = SocialDetail(
-                pension: resolved.pension.amount,
-                medical: resolved.medical.amount,
-                medicalFixed: resolved.medicalFixed.amount,
-                unemployment: resolved.unemployment.amount,
-                housingFund: resolved.housingFund.amount
-            )
-            let deductible = socialTotal + profile.monthlySpecialDeduction + profile.monthlyOtherDeduction
+            entry.social = perMonthSocial[m - 1]
+            let deductible = entry.socialTotal + profile.monthlySpecialDeduction + profile.monthlyOtherDeduction
             entry.taxable = gross - deductible - TaxRules.monthlyBasicDeduction
             if entry.taxable.cents < 0 { entry.taxable = .zero }
 
@@ -402,7 +440,7 @@ enum NetPayCalculator {
             entry.tax = tax
             cumulativeWithheld = cumulativeWithheld + tax
 
-            entry.net = gross - socialTotal - tax
+            entry.net = gross - entry.socialTotal - tax
             months.append(entry)
         }
 
