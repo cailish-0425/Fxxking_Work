@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import plistlib
 import re
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -80,6 +82,41 @@ def keys_defined(lproj: Path) -> set[str]:
     return defined
 
 
+def syntax_problems(strings: Path) -> list[str]:
+    """用 Foundation/plutil 真实解析 .strings，抓缺分号这类正则数 key 抓不到的语法错误。
+
+    .strings 一条 entry 必须以分号结尾；缺一个分号，CFBundle 会把整份文件判为
+    语法错误、解析失败，所有翻译（含其他语言）一起失效回退英文。key 数量检查
+    看不出来，必须让系统级解析器真的吃一遍。
+
+    优先用 plutil -lint（macOS 自带，正是 Foundation 用的解析路径）；没有 plutil
+    时退回 Python 的 Foundation 桥接（只做语法通过/失败判定），两者都不可用则
+    明确报告「语法校验不可用」而不是谎报通过。
+    """
+    problems: list[str] = []
+
+    if shutil.which("plutil"):
+        proc = subprocess.run(
+            ["plutil", "-lint", str(strings)], capture_output=True, text=True
+        )
+        if proc.returncode != 0:
+            problems.append(proc.stderr.strip() or proc.stdout.strip())
+        return problems
+
+    # 非 macOS 环境：尽量用 pyobjc 的 Foundation 解析器；没有就如实声明覆盖有限。
+    try:
+        from Foundation import NSDictionary  # type: ignore
+    except ImportError:
+        problems.append(
+            "语法校验不可用：本机无 plutil 也无 pyobjc Foundation，无法确认 .strings 语法正确"
+        )
+        return problems
+
+    if NSDictionary.dictionaryWithContentsOfFile_(str(strings)) is None:
+        problems.append("Foundation 解析失败：.strings 语法错误")
+    return problems
+
+
 def main() -> int:
     used = keys_used()
     languages = sorted(p for p in RESOURCES.glob("*.lproj") if p.is_dir())
@@ -93,6 +130,12 @@ def main() -> int:
     for lproj in languages:
         language = lproj.name.removesuffix(".lproj")
         defined = keys_defined(lproj)
+
+        strings = lproj / "Localizable.strings"
+        if strings.exists():
+            for problem in syntax_problems(strings):
+                failures += 1
+                print(f"FAIL  [{language}] .strings 语法错误：{problem}")
 
         missing = sorted(set(used) - defined)
         # 只有源语言必须字字齐全，其他语言缺了会回退到英文，属于待翻译而非错误。

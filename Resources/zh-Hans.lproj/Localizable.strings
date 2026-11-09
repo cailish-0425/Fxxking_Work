@@ -16,19 +16,8 @@
 "menu.action.refresh" = "刷新假日";
 "menu.action.settings" = "设置…";
 "menu.action.quit" = "退出";
-
-/* MARK: - 功德区 */
-
-"merit.level.novice" = "沙弥";
-"merit.level.arhat" = "罗汉";
-"merit.level.sweeper" = "扫地僧";
-"merit.today" = "今日 +%@ 功德";
-"merit.progress" = "%1$@ / %2$@";
-"merit.awayFromNext" = "距「%2$@」还差 %1$@ 功德";
-"merit.redeem" = "兑换提前下班券（%@ 功德）";
-"merit.redeem.help" = "花功德换今天提前下班";
-"merit.redeem.todo" = "功德兑换还没接上，敬请期待。";
-"merit.redeem.todo.ok" = "好";
+"menu.mode.net" = "（税后）";
+"menu.mode.gross" = "（税前）";
 
 /* MARK: - 工作状态 */
 
@@ -66,7 +55,7 @@
 "about.version" = "版本";
 "about.maintainer" = "维护者";
 "about.section.changes" = "更新说明";
-"about.summary" = "设置页与版本说明。"
+"about.summary" = "设置页与版本说明。";
 "about.section.links" = "链接";
 "about.github" = "GitHub";
 
@@ -121,9 +110,14 @@
 
 "away.title" = "欢迎回来";
 "away.body" = "你摸鱼 %1$@，公司照付 %2$@。";
+"away.body.private" = "你摸鱼 %1$@。";
 "away.dismiss" = "点击任意处关闭";
 
 "display.section.appearance" = "外观";
+"display.theme" = "主题";
+"appearance.system" = "跟随系统";
+"appearance.light" = "浅色";
+"appearance.dark" = "深色";
 "display.menuBar" = "菜单栏显示";
 "display.menuBar.todayAmount" = "今日已赚金额";
 "display.menuBar.todayPercent" = "今日进度百分比";
@@ -147,3 +141,106 @@
 "error.badResponse" = "无法解析假日服务的响应";
 "error.httpStatus" = "假日服务返回 HTTP %lld";
 "error.unsupportedCountry" = "该地区没有自动假日数据";
+
+/* MARK: - 税后 */
+"salary.payMode" = "计薪方式";
+"salary.payMode.gross" = "税前";
+"salary.payMode.net" = "税后";
+"salary.tax.section" = "税后参数";
+"salary.tax.region" = "参考地区";
+"salary.tax.region.custom" = "自定义";
+"salary.tax.region.effective" = "生效日期";
+"salary.tax.region.checked" = "核查日期";
+"salary.tax.region.source" = "政策来源";
+"salary.tax.social" = "社保与公积金";
+"salary.tax.pension" = "养老";
+"salary.tax.medical" = "医保";
+"salary.tax.medicalFixed" = "医保固定额";
+"salary.tax.unemployment" = "失业";
+"salary.tax.housingFund" = "公积金";
+"salary.tax.rate" = "比例";
+"salary.tax.base" = "基数";
+"salary.tax.auto" = "自动";
+"salary.tax.disabled" = "不缴";
+"salary.tax.manual" = "手动";
+"salary.tax.special" = "专项附加扣除";
+"salary.tax.other" = "其他扣除";
+"salary.tax.startMonth" = "任职起月";
+"salary.tax.bonusMonth" = "额外薪资月份";
+"salary.tax.detail" = "本月明细";
+"salary.tax.gross" = "税前";
+"salary.tax.socialTotal" = "社保";
+"salary.tax.tax" = "个税";
+"salary.tax.net" = "到手";
+"salary.tax.year" = "年度估算";
+"salary.tax.note" = "按当前参数推算，额外薪资合并计税。";
+"salary.tax.blocked" = "税后不可用";
+"salary.tax.notApplicable" = "税后仅支持中国大陆 CNY。";
+
+/* MARK: - 隐私模式 */
+"privacy.section" = "隐私";
+"privacy.toggle" = "隐私模式";
+"privacy.toggle.detail" = "默认掩码所有金额，点击金额显示、再点隐藏。";
+"privacy.reveal" = "显示金额";
+"privacy.hide" = "隐藏金额";
+"privacy.autoHide" = "金额 30 秒后自动隐藏。";
+
+/* MARK: - 工资历史 */
+"salary.history" = "工资变更";
+"salary.history.add" = "新增变更";
+"salary.history.edit" = "编辑变更";
+"salary.history.effective" = "生效日期";
+"salary.history.amount" = "金额";
+"salary.history.period" = "口径";
+"salary.history.monthsShort" = "%lld 个月/年";
+"salary.history.empty" = "暂无工资变更，全程按当前工资计。";
+"salary.history.hint" = "变更自生效日期起计薪；编辑或删除只影响该条变更。";
+"salary.history.save" = "保存";
+"salary.history.cancel" = "取消";
+"salary.history.undo" = "撤销最近操作";
+
+/* MARK: - 加班 */
+"overtime.section" = "加班";
+"overtime.start" = "开始加班";
+"overtime.stop" = "结束加班";
+"overtime.kind.paid" = "有偿";
+"overtime.kind.unpaid" = "无偿";
+"overtime.multiplier" = "倍率";
+"overtime.base" = "基准时薪";
+"overtime.base.auto" = "基准时薪按开始日期当时生效的工资自动填。";
+"overtime.defaultKind" = "默认加班类型";
+"overtime.history" = "加班历史";
+"overtime.history.empty" = "暂无加班记录。";
+"overtime.backfill" = "补录";
+"overtime.edit" = "编辑";
+"overtime.undo" = "撤销最近操作";
+"overtime.normal" = "正常工资";
+"overtime.ot" = "加班工资";
+"overtime.total" = "合计";
+"overtime.breakdown.gross" = "（税前）";
+"overtime.breakdown.net" = "（税后）";
+"overtime.loss" = "无偿加班：赔了 %@";
+"overtime.active" = "计时中…";
+"overtime.hint" = "需在下班时刻后手动点开始，才计入加班。";
+"overtime.error.overlap" = "与正常计薪时段或既有加班记录重叠。";
+"overtime.error.endBeforeStart" = "结束须晚于开始。";
+"overtime.error.future" = "结束不能在未来。";
+"overtime.error.alreadyActive" = "已有加班在计时中。";
+"overtime.error.notActive" = "当前没有进行中的加班。";
+"overtime.error.missing" = "该记录已不存在。";
+
+/* MARK: - 发薪账期 */
+"payroll.section" = "发薪日与账期";
+"payroll.enabled" = "自定义账期";
+"payroll.cutoffDay" = "账期截止日：%lld";
+"payroll.paydayDay" = "名义发薪日：%lld";
+"payroll.offset" = "发薪月";
+"payroll.offset.sameMonth" = "当月";
+"payroll.offset.nextMonth" = "次月";
+"payroll.example" = "示例：上月 26 日至本月 25 日，次月 10 日发薪。";
+"payroll.nextPayday" = "下次发薪";
+"payroll.today" = "今天";
+"payroll.inDays" = "%lld 天后";
+"payroll.period" = "本账期";
+"payroll.earned" = "本账期已赚";
+"payroll.earned.net" = "本账期已赚（税后）";

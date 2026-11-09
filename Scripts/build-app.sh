@@ -7,7 +7,7 @@ APP_NAME="Fxxking Work"
 EXECUTABLE="Fxxking_Work"
 BUNDLE_ID="dev.cailish-0425.Fxxking-Work"
 # CI 发版时用 tag 覆盖，本地构建保持默认值。
-VERSION="${VERSION:-1.1.0}"
+VERSION="${VERSION:-1.2.0}"
 DEPLOYMENT_TARGET="14.0"
 
 DIST="$ROOT/dist"
@@ -101,20 +101,6 @@ if [ -f "$ICON_SRC" ]; then
     echo "==> 图标: AppIcon.icns"
 else
     echo "==> 没有 Resources/AppIcon.png, 本次不带图标"
-fi
-
-# 弹窗里的木鱼。和图标一样只存一张母版，构建时缩一次。
-#
-# 这里不拆 @2x：视图里总是显式给 frame，NSImage 的固有尺寸用不上，
-# 只要位图分辨率够高、缩放时是在降采样就行。拆两张反而要求脚本里的点数
-# 跟着视图的 frame 走，改个大小就得两头对齐。176px 宽在 Retina 上放到
-# 目前的显示尺寸仍有近三倍余量，也不至于让 bundle 变胖。
-MUYU_SRC="$ROOT/Resources/Muyu.png"
-if [ -f "$MUYU_SRC" ]; then
-    sips --resampleWidth 176 "$MUYU_SRC" --out "$APP/Contents/Resources/Muyu.png" >/dev/null
-    echo "==> 素材: Muyu.png"
-else
-    echo "==> 没有 Resources/Muyu.png, 弹窗里的木鱼会缺图" >&2
 fi
 
 cat > "$APP/Contents/Info.plist" <<PLIST

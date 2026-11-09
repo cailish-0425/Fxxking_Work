@@ -21,6 +21,52 @@ extension MenuBarDisplay {
         }
     }
 }
+extension AppAppearance {
+    var label: String {
+        switch self {
+        case .system: return Loc.t("appearance.system")
+        case .light: return Loc.t("appearance.light")
+        case .dark: return Loc.t("appearance.dark")
+        }
+    }
+}
+extension PayMode {
+    var label: String {
+        switch self {
+        case .gross: return Loc.t("salary.payMode.gross")
+        case .net: return Loc.t("salary.payMode.net")
+        }
+    }
+}
+extension SalaryVersion {
+    /// 历史列表里展示口径：月薪 / 年薪。
+    var periodLabel: String {
+        switch period {
+        case .monthly: return Loc.t("salary.period.monthly")
+        case .annual: return Loc.t("salary.period.annual")
+        }
+    }
+}
+extension OvertimePayKind {
+    var label: String {
+        switch self {
+        case .paid: return Loc.t("overtime.kind.paid")
+        case .unpaid: return Loc.t("overtime.kind.unpaid")
+        }
+    }
+}
+extension OvertimeLedgerError {
+    var label: String {
+        switch self {
+        case .alreadyActive: return Loc.t("overtime.error.alreadyActive")
+        case .notActive: return Loc.t("overtime.error.notActive")
+        case .endBeforeStart: return Loc.t("overtime.error.endBeforeStart")
+        case .futureEnd: return Loc.t("overtime.error.future")
+        case .overlap: return Loc.t("overtime.error.overlap")
+        case .missing: return Loc.t("overtime.error.missing")
+        }
+    }
+}
 extension DayOffReason {
     var label: String {
         switch self {

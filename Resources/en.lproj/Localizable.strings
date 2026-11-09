@@ -18,19 +18,8 @@
 "menu.action.refresh" = "Refresh holidays";
 "menu.action.settings" = "Settings…";
 "menu.action.quit" = "Quit";
-
-/* MARK: - Merit zone */
-
-"merit.level.novice" = "Novice";
-"merit.level.arhat" = "Arhat";
-"merit.level.sweeper" = "Sweeping Monk";
-"merit.today" = "Today +%@ merit";
-"merit.progress" = "%1$@ / %2$@";
-"merit.awayFromNext" = "%1$@ merit to %2$@";
-"merit.redeem" = "Redeem early leave (%@ merit)";
-"merit.redeem.help" = "Spend merit to leave early today";
-"merit.redeem.todo" = "Merit redemption isn't wired up yet.";
-"merit.redeem.todo.ok" = "OK";
+"menu.mode.net" = " (net)";
+"menu.mode.gross" = " (gross)";
 
 /* MARK: - Work status */
 
@@ -68,7 +57,7 @@
 "about.version" = "Version";
 "about.maintainer" = "Maintainer";
 "about.section.changes" = "What's new";
-"about.summary" = "Settings page and version notes."
+"about.summary" = "Settings page and version notes.";
 "about.section.links" = "Links";
 "about.github" = "GitHub";
 
@@ -123,9 +112,14 @@
 
 "away.title" = "Welcome back";
 "away.body" = "You slacked off for %1$@. The company paid you %2$@ for it.";
+"away.body.private" = "You slacked off for %1$@.";
 "away.dismiss" = "Click anywhere to dismiss";
 
 "display.section.appearance" = "Appearance";
+"display.theme" = "Theme";
+"appearance.system" = "Follow system";
+"appearance.light" = "Light";
+"appearance.dark" = "Dark";
 "display.menuBar" = "Menu bar shows";
 "display.menuBar.todayAmount" = "Today's earnings";
 "display.menuBar.todayPercent" = "Today's progress";
@@ -149,3 +143,106 @@
 "error.badResponse" = "Couldn't read the response from the holiday service";
 "error.httpStatus" = "The holiday service returned HTTP %lld";
 "error.unsupportedCountry" = "No automatic holiday data for this region";
+
+/* MARK: - 税后 */
+"salary.payMode" = "Pay mode";
+"salary.payMode.gross" = "Gross";
+"salary.payMode.net" = "Net";
+"salary.tax.section" = "Tax settings";
+"salary.tax.region" = "Reference region";
+"salary.tax.region.custom" = "Custom";
+"salary.tax.region.effective" = "Effective from";
+"salary.tax.region.checked" = "Checked";
+"salary.tax.region.source" = "Source";
+"salary.tax.social" = "Social insurance & housing fund";
+"salary.tax.pension" = "Pension";
+"salary.tax.medical" = "Medical";
+"salary.tax.medicalFixed" = "Medical fixed";
+"salary.tax.unemployment" = "Unemployment";
+"salary.tax.housingFund" = "Housing fund";
+"salary.tax.rate" = "Rate";
+"salary.tax.base" = "Base";
+"salary.tax.auto" = "Auto";
+"salary.tax.disabled" = "Not paid";
+"salary.tax.manual" = "Manual";
+"salary.tax.special" = "Special deduction";
+"salary.tax.other" = "Other deduction";
+"salary.tax.startMonth" = "Start month";
+"salary.tax.bonusMonth" = "Bonus month";
+"salary.tax.detail" = "This month";
+"salary.tax.gross" = "Gross";
+"salary.tax.socialTotal" = "Social";
+"salary.tax.tax" = "Tax";
+"salary.tax.net" = "Take-home";
+"salary.tax.year" = "Annual estimate";
+"salary.tax.note" = "Estimated from current settings; the extra salary is taxed together.";
+"salary.tax.blocked" = "Net unavailable";
+"salary.tax.notApplicable" = "Net only supports mainland China (CNY).";
+
+/* MARK: - 隐私模式 */
+"privacy.section" = "Privacy";
+"privacy.toggle" = "Privacy mode";
+"privacy.toggle.detail" = "Mask all amounts by default. Tap an amount to reveal it, tap again to hide.";
+"privacy.reveal" = "Show amount";
+"privacy.hide" = "Hide amount";
+"privacy.autoHide" = "Amounts auto-hide after 30 seconds.";
+
+/* MARK: - 工资历史 */
+"salary.history" = "Salary changes";
+"salary.history.add" = "Add change";
+"salary.history.edit" = "Edit change";
+"salary.history.effective" = "Effective";
+"salary.history.amount" = "Amount";
+"salary.history.period" = "Period";
+"salary.history.monthsShort" = "%lld mo/yr";
+"salary.history.empty" = "No salary changes. Current salary applies from the start.";
+"salary.history.hint" = "Changes apply from their effective date. Editing or deleting only affects that change.";
+"salary.history.save" = "Save";
+"salary.history.cancel" = "Cancel";
+"salary.history.undo" = "Undo last change";
+
+/* MARK: - 加班 */
+"overtime.section" = "Overtime";
+"overtime.start" = "Start overtime";
+"overtime.stop" = "Stop overtime";
+"overtime.kind.paid" = "Paid";
+"overtime.kind.unpaid" = "Unpaid";
+"overtime.multiplier" = "Multiplier";
+"overtime.base" = "Base rate";
+"overtime.base.auto" = "Base rate is auto-filled from the salary in effect on the start date.";
+"overtime.defaultKind" = "Default overtime type";
+"overtime.history" = "Overtime history";
+"overtime.history.empty" = "No overtime recorded yet.";
+"overtime.backfill" = "Add record";
+"overtime.edit" = "Edit";
+"overtime.undo" = "Undo last change";
+"overtime.normal" = "Regular";
+"overtime.ot" = "Overtime";
+"overtime.total" = "Total";
+"overtime.breakdown.gross" = " (gross)";
+"overtime.breakdown.net" = " (net)";
+"overtime.loss" = "Unpaid overtime: lost %@";
+"overtime.active" = "Tracking…";
+"overtime.hint" = "Overtime starts only when you tap start, after your scheduled end time.";
+"overtime.error.overlap" = "Overlaps regular work hours or an existing overtime record.";
+"overtime.error.endBeforeStart" = "End must be after start.";
+"overtime.error.future" = "End can't be in the future.";
+"overtime.error.alreadyActive" = "Overtime is already tracking.";
+"overtime.error.notActive" = "No overtime is tracking.";
+"overtime.error.missing" = "This record no longer exists.";
+
+/* MARK: - 发薪账期 */
+"payroll.section" = "Payday & period";
+"payroll.enabled" = "Custom pay period";
+"payroll.cutoffDay" = "Period cutoff day: %lld";
+"payroll.paydayDay" = "Nominal payday: %lld";
+"payroll.offset" = "Payday";
+"payroll.offset.sameMonth" = "Same month";
+"payroll.offset.nextMonth" = "Next month";
+"payroll.example" = "Example: previous month's 26th to this month's 25th, paid on the 10th of the next month.";
+"payroll.nextPayday" = "Next payday";
+"payroll.today" = "Today";
+"payroll.inDays" = "%lld days";
+"payroll.period" = "Current period";
+"payroll.earned" = "Earned this period";
+"payroll.earned.net" = "Earned this period (net)";

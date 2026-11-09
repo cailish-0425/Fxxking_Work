@@ -16,19 +16,10 @@
 "menu.action.refresh" = "Обновить праздники";
 "menu.action.settings" = "Настройки…";
 "menu.action.quit" = "Выйти";
+"menu.mode.net" = " (после вычета)";
+"menu.mode.gross" = " (до вычета)";
 
 /* MARK: - Зона заслуг */
-
-"merit.level.novice" = "Послушник";
-"merit.level.arhat" = "Архат";
-"merit.level.sweeper" = "Монах с метлой";
-"merit.today" = "Сегодня +%@ заслуг";
-"merit.progress" = "%1$@ / %2$@";
-"merit.awayFromNext" = "Ещё %1$@ заслуг до «%2$@»";
-"merit.redeem" = "Обменять на ранний уход (%@ заслуг)";
-"merit.redeem.help" = "Потратить заслуги, чтобы уйти раньше сегодня";
-"merit.redeem.todo" = "Обмен заслуг ещё не подключён.";
-"merit.redeem.todo.ok" = "ОК";
 
 /* MARK: - Рабочий статус */
 
@@ -66,7 +57,7 @@
 "about.version" = "Версия";
 "about.maintainer" = "Сопровождающий";
 "about.section.changes" = "Что нового";
-"about.summary" = "Страница настроек и примечания к версии."
+"about.summary" = "Страница настроек и примечания к версии.";
 "about.section.links" = "Ссылки";
 "about.github" = "GitHub";
 
@@ -121,9 +112,14 @@
 
 "away.title" = "С возвращением";
 "away.body" = "Вы бездельничали %1$@. Компания заплатила вам за это %2$@.";
+"away.body.private" = "Вы бездельничали %1$@.";
 "away.dismiss" = "Нажмите в любом месте, чтобы закрыть";
 
 "display.section.appearance" = "Оформление";
+"display.theme" = "Тема";
+"appearance.system" = "Как в системе";
+"appearance.light" = "Светлая";
+"appearance.dark" = "Тёмная";
 "display.menuBar" = "В строке меню";
 "display.menuBar.todayAmount" = "Заработок за сегодня";
 "display.menuBar.todayPercent" = "Прогресс за сегодня";
@@ -147,3 +143,106 @@
 "error.badResponse" = "Не удалось прочитать ответ службы праздников";
 "error.httpStatus" = "Служба праздников вернула HTTP %lld";
 "error.unsupportedCountry" = "Для этого региона нет автоматических данных о праздниках";
+
+/* MARK: - 税后 */
+"salary.payMode" = "Режим расчёта";
+"salary.payMode.gross" = "До вычета";
+"salary.payMode.net" = "После вычета";
+"salary.tax.section" = "Параметры налогов";
+"salary.tax.region" = "Регион-образец";
+"salary.tax.region.custom" = "Свой";
+"salary.tax.region.effective" = "Действует с";
+"salary.tax.region.checked" = "Проверено";
+"salary.tax.region.source" = "Источник";
+"salary.tax.social" = "Страховые взносы и жилфонд";
+"salary.tax.pension" = "Пенсия";
+"salary.tax.medical" = "Медицина";
+"salary.tax.medicalFixed" = "Медицина (фикс.)";
+"salary.tax.unemployment" = "Безработица";
+"salary.tax.housingFund" = "Жилфонд";
+"salary.tax.rate" = "Ставка";
+"salary.tax.base" = "База";
+"salary.tax.auto" = "Авто";
+"salary.tax.disabled" = "Не платится";
+"salary.tax.manual" = "Вручную";
+"salary.tax.special" = "Спецвычет";
+"salary.tax.other" = "Прочий вычет";
+"salary.tax.startMonth" = "Месяц начала";
+"salary.tax.bonusMonth" = "Месяц премии";
+"salary.tax.detail" = "В этом месяце";
+"salary.tax.gross" = "До вычета";
+"salary.tax.socialTotal" = "Взносы";
+"salary.tax.tax" = "Налог";
+"salary.tax.net" = "На руки";
+"salary.tax.year" = "Оценка за год";
+"salary.tax.note" = "Оценка по текущим параметрам; дополнительная зарплата облагается вместе.";
+"salary.tax.blocked" = "Сумма после вычета недоступна";
+"salary.tax.notApplicable" = "Режим после вычета доступен только для КНР (CNY).";
+
+/* MARK: - 隐私模式 */
+"privacy.section" = "Конфиденциальность";
+"privacy.toggle" = "Режим конфиденциальности";
+"privacy.toggle.detail" = "Скрывать все суммы по умолчанию. Нажмите сумму, чтобы показать, ещё раз — скрыть.";
+"privacy.reveal" = "Показать сумму";
+"privacy.hide" = "Скрыть сумму";
+"privacy.autoHide" = "Суммы скрываются через 30 секунд.";
+
+/* MARK: - 工资历史 */
+"salary.history" = "Изменения зарплаты";
+"salary.history.add" = "Добавить изменение";
+"salary.history.edit" = "Изменить запись";
+"salary.history.effective" = "Вступает в силу";
+"salary.history.amount" = "Сумма";
+"salary.history.period" = "Период";
+"salary.history.monthsShort" = "%lld мес/год";
+"salary.history.empty" = "Нет изменений. Текущая зарплата действует с начала.";
+"salary.history.hint" = "Изменения действуют с даты вступления. Правка или удаление затрагивают только эту запись.";
+"salary.history.save" = "Сохранить";
+"salary.history.cancel" = "Отмена";
+"salary.history.undo" = "Отменить последнее изменение";
+
+/* MARK: - 加班 */
+"overtime.section" = "Сверхурочные";
+"overtime.start" = "Начать";
+"overtime.stop" = "Завершить";
+"overtime.kind.paid" = "Оплачиваемые";
+"overtime.kind.unpaid" = "Неоплачиваемые";
+"overtime.multiplier" = "Множитель";
+"overtime.base" = "Базовая ставка";
+"overtime.base.auto" = "Базовая ставка подставляется из зарплаты на дату начала.";
+"overtime.defaultKind" = "Тип по умолчанию";
+"overtime.history" = "История";
+"overtime.history.empty" = "Сверхурочных пока нет.";
+"overtime.backfill" = "Добавить";
+"overtime.edit" = "Изменить";
+"overtime.undo" = "Отменить последнее изменение";
+"overtime.normal" = "Обычная зарплата";
+"overtime.ot" = "Сверхурочные";
+"overtime.total" = "Итого";
+"overtime.breakdown.gross" = " (брутто)";
+"overtime.breakdown.net" = " (нетто)";
+"overtime.loss" = "Неоплаченные сверхурочные: потеряно %@";
+"overtime.active" = "Идёт…";
+"overtime.hint" = "Сверхурочные считаются только после нажатия «Начать» после окончания смены.";
+"overtime.error.overlap" = "Пересекается с рабочими часами или существующей записью.";
+"overtime.error.endBeforeStart" = "Конец должен быть позже начала.";
+"overtime.error.future" = "Конец не может быть в будущем.";
+"overtime.error.alreadyActive" = "Сверхурочные уже идут.";
+"overtime.error.notActive" = "Сверхурочные не идут.";
+"overtime.error.missing" = "Эта запись больше не существует.";
+
+/* MARK: - 发薪账期 */
+"payroll.section" = "День выплаты и период";
+"payroll.enabled" = "Свой период";
+"payroll.cutoffDay" = "День окончания периода: %lld";
+"payroll.paydayDay" = "Номинальный день выплаты: %lld";
+"payroll.offset" = "Месяц выплаты";
+"payroll.offset.sameMonth" = "Тот же месяц";
+"payroll.offset.nextMonth" = "Следующий месяц";
+"payroll.example" = "Пример: с 26 числа прошлого месяца по 25 число, выплата 10 числа следующего.";
+"payroll.nextPayday" = "Следующая выплата";
+"payroll.today" = "Сегодня";
+"payroll.inDays" = "через %lld дн.";
+"payroll.period" = "Текущий период";
+"payroll.earned" = "Заработано за период";
+"payroll.earned.net" = "Заработано за период (нетто)";

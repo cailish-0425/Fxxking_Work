@@ -19,6 +19,119 @@ enum MenuBarDisplay: String, Codable, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+/// 界面外观：跟随系统 / 浅色 / 深色。纯 Foundation 类型，模型层不依赖 SwiftUI。
+enum AppAppearance: String, Codable, CaseIterable, Identifiable {
+    case system
+    case light
+    case dark
+
+    var id: String { rawValue }
+}
+
+/// 税前 / 税后。税前是默认，税后仅中国大陆单位职工（CN + CNY）。
+enum PayMode: String, Codable, CaseIterable, Identifiable {
+    case gross
+    case net
+
+    var id: String { rawValue }
+}
+
+/// 单项社保/公积金缴费基数的三种状态，把「未填」「显式不缴」「手填值」分开。
+/// - `.auto`：未填，随月薪自动在参考上下限内取值（随工资更新）。
+/// - `.disabled`：用户显式不参与该项缴费。
+/// - `.manual(Money)`：手填值，持久化优先，不被地区切换或自动推导覆盖。
+enum SocialBase: Equatable, Hashable {
+    case auto
+    case disabled
+    case manual(Money)
+
+    var isManual: Bool { if case .manual = self { return true }; return false }
+}
+
+extension SocialBase: Codable {
+    init(from decoder: Decoder) throws {
+        let c = try decoder.singleValueContainer()
+        // 宽松：旧配置可能是裸数字（视为手填基数）。
+        if let cents = try? c.decode(Int64.self) {
+            self = .manual(Money(cents: cents))
+            return
+        }
+        if let s = try? c.decode(String.self) {
+            switch s {
+            case "disabled": self = .disabled
+            default: self = .auto
+            }
+            return
+        }
+        self = .auto
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.singleValueContainer()
+        switch self {
+        case .auto: try c.encode("auto")
+        case .disabled: try c.encode("disabled")
+        case .manual(let m): try c.encode(m.cents)
+        }
+    }
+}
+
+/// 社保个人缴费参数。养老/医疗/失业/公积金各自独立基数与比例；
+/// 医保可带固定额（如北京大额医疗互助 3 元/月）。
+/// 基数为 `.auto` 时按参考上下限从月薪自动取值；`.disabled` 不参与；`.manual` 手填覆盖。
+struct SocialInsurance: Codable, Equatable {
+    var pension: SocialBase = .auto
+    var pensionRateBp: Int = 800          // 个人养老 8%
+    var medical: SocialBase = .auto
+    var medicalRateBp: Int = 200          // 个人医保 2%
+    /// 医保固定额：`.auto` 取地区参考（北京 3 / 上海 0），`.manual` 手填覆盖，`.disabled` 为 0。
+    var medicalFixed: SocialBase = .auto
+    var unemployment: SocialBase = .auto
+    var unemploymentRateBp: Int = 50      // 个人失业 0.5%
+    var housingFund: SocialBase = .auto
+    var housingFundRateBp: Int = 500      // 公积金个人比例，参考默认 5%，用户可改
+}
+
+/// 税后预测参数。地区 preset 仅作参考，选择地区不覆盖手填值，点「应用参考」才替换；
+/// 恢复默认才清手填值。
+struct TaxProfile: Codable, Equatable {
+    /// 参考地区标识：beijing / shanghai / custom（其他城市手填城市名）。初始参考北京。
+    var region: String = "beijing"
+    var cityName: String = ""
+    /// 任职起月 1…12，默认 1；之前的月份无收入。
+    var employmentStartMonth: Int = 1
+    /// 专项附加扣除（每月，分）。
+    var monthlySpecialDeduction: Money = .zero
+    /// 其他依法扣除（每月，分）。
+    var monthlyOtherDeduction: Money = .zero
+    /// 13/14 薪额外工资发放月份（1…12），默认 12；发放月份并入当月工资薪金计税。
+    var bonusMonth: Int = 12
+    var social: SocialInsurance = .init()
+}
+
+extension Money {
+    static let zero = Money(cents: 0)
+}
+
+/// 发薪日与账期设置。`enabled == false` 或字段缺省时保持自然月口径。
+struct PayrollSettings: Codable, Equatable {
+    /// 是否启用自定义账期/发薪日（关闭 = 自然月，不显示账期汇总）。
+    var enabled: Bool = false
+    /// 账期截止日 1…31。
+    var cutoffDay: Int = 25
+    /// 名义发薪日 1…31。
+    var paydayDay: Int = 10
+    /// 发薪在结算月当月还是次月。
+    var offset: PaydayOffset = .nextMonth
+
+    /// 由当前设置构造 PayrollCalendar；disabled 时返回 nil（调用方回退自然月口径）。
+    var calendar: PayrollCalendar? {
+        guard enabled else { return nil }
+        return try? PayrollCalendar(cutoffDay: cutoffDay, paydayDay: paydayDay, offset: offset)
+    }
+}
+
+
 struct Configuration: Codable, Equatable {
     var salaryAmount: Double = 20000
     var salaryPeriod: SalaryPeriod = .monthly
@@ -49,8 +162,27 @@ struct Configuration: Codable, Equatable {
     var snarkEnabled: Bool = true
     /// 解锁后提示这段时间公司照付了多少钱。
     var awayAlertEnabled: Bool = true
+    /// 界面外观，旧配置缺字段时宽松回退到跟随系统。
+    var appearance: AppAppearance = .system
     /// 只影响界面文字，货币和日期格式仍然跟随系统地区。
     var language: AppLanguage = .system
+    /// 税前 / 税后。缺字段回退税前，旧配置零行为变化。
+    var payMode: PayMode = .gross
+    /// 税后预测参数，仅 net 模式生效。
+    var tax: TaxProfile = .init()
+    /// 隐私模式：开启时所有金额默认掩码，点击眼睛临时查看。默认关以兼容旧配置。
+    var privacyModeEnabled: Bool = false
+    /// 账期与发薪日设置。旧配置缺字段 → 保持自然月口径（账期 = 自然月，无自定义发薪日）。
+    var payroll: PayrollSettings = .init()
+    /// 工资变更历史。空数组 = 全程用当前 salaryAmount（旧配置兼容，无日期基线）。
+    var salaryHistory: [SalaryVersion] = []
+    /// 首次新增工资变更时冻结的旧工资基线；nil 表示尚未冻结（无历史）。
+    var salaryBaseline: SalaryBaseline? = nil
+    /// 加班设置：默认有偿/无偿、默认倍率（有偿 1/2/3）。旧配置缺字段回退默认。
+    var overtimePayDefault: OvertimePayKind = .paid
+    var overtimeMultiplier: Int = 1
+    /// 加班台账（持久化，重启恢复；进行中的段一并保留）。
+    var overtimeSessions: [OvertimeSession] = []
 
     init() {}
 
@@ -78,7 +210,17 @@ struct Configuration: Codable, Equatable {
         showMenuBarIcon = (try? c.decode(Bool.self, forKey: .showMenuBarIcon)) ?? showMenuBarIcon
         snarkEnabled = (try? c.decode(Bool.self, forKey: .snarkEnabled)) ?? snarkEnabled
         awayAlertEnabled = (try? c.decode(Bool.self, forKey: .awayAlertEnabled)) ?? awayAlertEnabled
+        appearance = (try? c.decode(AppAppearance.self, forKey: .appearance)) ?? appearance
         language = (try? c.decode(AppLanguage.self, forKey: .language)) ?? language
+        payMode = (try? c.decode(PayMode.self, forKey: .payMode)) ?? payMode
+        privacyModeEnabled = (try? c.decode(Bool.self, forKey: .privacyModeEnabled)) ?? privacyModeEnabled
+        payroll = (try? c.decode(PayrollSettings.self, forKey: .payroll)) ?? payroll
+        salaryHistory = (try? c.decode([SalaryVersion].self, forKey: .salaryHistory)) ?? salaryHistory
+        salaryBaseline = (try? c.decode(SalaryBaseline.self, forKey: .salaryBaseline)) ?? salaryBaseline
+        overtimePayDefault = (try? c.decode(OvertimePayKind.self, forKey: .overtimePayDefault)) ?? overtimePayDefault
+        overtimeMultiplier = (try? c.decode(Int.self, forKey: .overtimeMultiplier)) ?? overtimeMultiplier
+        overtimeSessions = (try? c.decode([OvertimeSession].self, forKey: .overtimeSessions)) ?? overtimeSessions
+        tax = (try? c.decode(TaxProfile.self, forKey: .tax)) ?? tax
     }
 
     var monthlyPay: Double {

@@ -75,11 +75,18 @@ final class EarningsTicker: ObservableObject {
         guard report.isWorthShowing else { return }
 
         awayReport = report
-        let amount = Formatters.currency(report.amount, code: settings.config.currencyCode)
-        AwayNotifier.shared.post(
-            title: Loc.t("away.title"),
-            body: Loc.t("away.body", Formatters.duration(report.paidSeconds), amount)
-        )
+        let body: String
+        if settings.config.privacyModeEnabled {
+            // 隐私开启：通知正文必须是通用文字，不含金额/时薪，不以「某处已揭示」为放行条件。
+            body = Loc.t("away.body.private", Formatters.duration(report.paidSeconds))
+        } else {
+            body = Loc.t(
+                "away.body",
+                Formatters.duration(report.paidSeconds),
+                Formatters.currency(report.amount, code: settings.config.currencyCode)
+            )
+        }
+        AwayNotifier.shared.post(title: Loc.t("away.title"), body: body)
     }
 
     /// 用 Task 循环而不是 Timer：它不受运行循环模式影响，菜单弹出时也照跳。

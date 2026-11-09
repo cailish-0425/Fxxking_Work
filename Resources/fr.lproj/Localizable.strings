@@ -16,19 +16,10 @@
 "menu.action.refresh" = "Actualiser les jours fériés";
 "menu.action.settings" = "Réglages…";
 "menu.action.quit" = "Quitter";
+"menu.mode.net" = " (net)";
+"menu.mode.gross" = " (brut)";
 
 /* MARK: - Zone de mérite */
-
-"merit.level.novice" = "Novice";
-"merit.level.arhat" = "Arhat";
-"merit.level.sweeper" = "Moine balayeur";
-"merit.today" = "Aujourd'hui +%@ de mérite";
-"merit.progress" = "%1$@ / %2$@";
-"merit.awayFromNext" = "Encore %1$@ de mérite pour %2$@";
-"merit.redeem" = "Échanger une sortie anticipée (%@ de mérite)";
-"merit.redeem.help" = "Dépenser du mérite pour partir plus tôt aujourd'hui";
-"merit.redeem.todo" = "L'échange de mérite n'est pas encore branché.";
-"merit.redeem.todo.ok" = "D'accord";
 
 /* MARK: - Statut de travail */
 
@@ -66,7 +57,7 @@
 "about.version" = "Version";
 "about.maintainer" = "Mainteneur";
 "about.section.changes" = "Nouveautés";
-"about.summary" = "Page de réglages et notes de version."
+"about.summary" = "Page de réglages et notes de version.";
 "about.section.links" = "Liens";
 "about.github" = "GitHub";
 
@@ -121,9 +112,14 @@
 
 "away.title" = "Content de vous revoir";
 "away.body" = "Vous avez glandé pendant %1$@. L'entreprise vous a versé %2$@ pour ça.";
+"away.body.private" = "Vous avez glandé pendant %1$@.";
 "away.dismiss" = "Cliquez n'importe où pour fermer";
 
 "display.section.appearance" = "Apparence";
+"display.theme" = "Thème";
+"appearance.system" = "Suivre le système";
+"appearance.light" = "Clair";
+"appearance.dark" = "Sombre";
 "display.menuBar" = "Barre des menus";
 "display.menuBar.todayAmount" = "Gains du jour";
 "display.menuBar.todayPercent" = "Progression du jour";
@@ -147,3 +143,106 @@
 "error.badResponse" = "Impossible de lire la réponse du service de jours fériés";
 "error.httpStatus" = "Le service de jours fériés a renvoyé HTTP %lld";
 "error.unsupportedCountry" = "Aucune donnée automatique de jours fériés pour cette région";
+
+/* MARK: - 税后 */
+"salary.payMode" = "Mode de paie";
+"salary.payMode.gross" = "Brut";
+"salary.payMode.net" = "Net";
+"salary.tax.section" = "Réglages fiscaux";
+"salary.tax.region" = "Région de référence";
+"salary.tax.region.custom" = "Personnalisé";
+"salary.tax.region.effective" = "En vigueur depuis";
+"salary.tax.region.checked" = "Vérifié le";
+"salary.tax.region.source" = "Source";
+"salary.tax.social" = "Assurance sociale et fonds logement";
+"salary.tax.pension" = "Retraite";
+"salary.tax.medical" = "Santé";
+"salary.tax.medicalFixed" = "Santé (montant fixe)";
+"salary.tax.unemployment" = "Chômage";
+"salary.tax.housingFund" = "Fonds logement";
+"salary.tax.rate" = "Taux";
+"salary.tax.base" = "Base";
+"salary.tax.auto" = "Auto";
+"salary.tax.disabled" = "Non versé";
+"salary.tax.manual" = "Manuel";
+"salary.tax.special" = "Déduction spéciale";
+"salary.tax.other" = "Autre déduction";
+"salary.tax.startMonth" = "Mois de début";
+"salary.tax.bonusMonth" = "Mois du bonus";
+"salary.tax.detail" = "Ce mois-ci";
+"salary.tax.gross" = "Brut";
+"salary.tax.socialTotal" = "Social";
+"salary.tax.tax" = "Impôt";
+"salary.tax.net" = "Net à payer";
+"salary.tax.year" = "Estimation annuelle";
+"salary.tax.note" = "Estimé selon les réglages actuels ; le salaire supplémentaire est imposé ensemble.";
+"salary.tax.blocked" = "Net indisponible";
+"salary.tax.notApplicable" = "Le net ne prend en charge que la Chine continentale (CNY).";
+
+/* MARK: - 隐私模式 */
+"privacy.section" = "Confidentialité";
+"privacy.toggle" = "Mode confidentialité";
+"privacy.toggle.detail" = "Masque tous les montants par défaut. Touchez un montant pour l'afficher, encore pour le masquer.";
+"privacy.reveal" = "Afficher le montant";
+"privacy.hide" = "Masquer le montant";
+"privacy.autoHide" = "Les montants se masquent après 30 secondes.";
+
+/* MARK: - 工资历史 */
+"salary.history" = "Changements de salaire";
+"salary.history.add" = "Ajouter un changement";
+"salary.history.edit" = "Modifier le changement";
+"salary.history.effective" = "En vigueur";
+"salary.history.amount" = "Montant";
+"salary.history.period" = "Période";
+"salary.history.monthsShort" = "%lld mois/an";
+"salary.history.empty" = "Aucun changement. Le salaire actuel s'applique depuis le début.";
+"salary.history.hint" = "Les changements s'appliquent à partir de leur date d'effet. La modification ou la suppression ne touche que ce changement.";
+"salary.history.save" = "Enregistrer";
+"salary.history.cancel" = "Annuler";
+"salary.history.undo" = "Annuler le dernier changement";
+
+/* MARK: - 加班 */
+"overtime.section" = "Heures supplémentaires";
+"overtime.start" = "Démarrer";
+"overtime.stop" = "Terminer";
+"overtime.kind.paid" = "Payées";
+"overtime.kind.unpaid" = "Non payées";
+"overtime.multiplier" = "Multiplicateur";
+"overtime.base" = "Taux de base";
+"overtime.base.auto" = "Taux de base rempli d'après le salaire en vigueur à la date de début.";
+"overtime.defaultKind" = "Type par défaut";
+"overtime.history" = "Historique";
+"overtime.history.empty" = "Aucune heure supplémentaire enregistrée.";
+"overtime.backfill" = "Ajouter";
+"overtime.edit" = "Modifier";
+"overtime.undo" = "Annuler le dernier changement";
+"overtime.normal" = "Salaire normal";
+"overtime.ot" = "Heures sup.";
+"overtime.total" = "Total";
+"overtime.breakdown.gross" = " (brut)";
+"overtime.breakdown.net" = " (net)";
+"overtime.loss" = "Heures sup. non payées : perdu %@";
+"overtime.active" = "En cours…";
+"overtime.hint" = "Les heures sup. ne comptent qu'après un appui sur démarrer, après l'heure de fin.";
+"overtime.error.overlap" = "Chevauche les heures normales ou une saisie existante.";
+"overtime.error.endBeforeStart" = "La fin doit suivre le début.";
+"overtime.error.future" = "La fin ne peut pas être dans le futur.";
+"overtime.error.alreadyActive" = "Des heures sup. sont déjà en cours.";
+"overtime.error.notActive" = "Aucune heure sup. en cours.";
+"overtime.error.missing" = "Cette saisie n'existe plus.";
+
+/* MARK: - 发薪账期 */
+"payroll.section" = "Jour de paie et période";
+"payroll.enabled" = "Période personnalisée";
+"payroll.cutoffDay" = "Jour de clôture : %lld";
+"payroll.paydayDay" = "Jour de paie nominal : %lld";
+"payroll.offset" = "Mois de paie";
+"payroll.offset.sameMonth" = "Même mois";
+"payroll.offset.nextMonth" = "Mois suivant";
+"payroll.example" = "Exemple : du 26 du mois précédent au 25 du mois, payé le 10 du mois suivant.";
+"payroll.nextPayday" = "Prochain jour de paie";
+"payroll.today" = "Aujourd'hui";
+"payroll.inDays" = "%lld jours";
+"payroll.period" = "Période en cours";
+"payroll.earned" = "Gagné cette période";
+"payroll.earned.net" = "Gagné cette période (net)";

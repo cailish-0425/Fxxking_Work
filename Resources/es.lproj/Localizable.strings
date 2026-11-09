@@ -16,19 +16,10 @@
 "menu.action.refresh" = "Actualizar festivos";
 "menu.action.settings" = "Ajustes…";
 "menu.action.quit" = "Salir";
+"menu.mode.net" = " (neto)";
+"menu.mode.gross" = " (bruto)";
 
 /* MARK: - Zona de mérito */
-
-"merit.level.novice" = "Novicio";
-"merit.level.arhat" = "Arhat";
-"merit.level.sweeper" = "Monje barrendero";
-"merit.today" = "Hoy +%@ de mérito";
-"merit.progress" = "%1$@ / %2$@";
-"merit.awayFromNext" = "%1$@ de mérito para %2$@";
-"merit.redeem" = "Canjear salida anticipada (%@ de mérito)";
-"merit.redeem.help" = "Gasta mérito para salir antes hoy";
-"merit.redeem.todo" = "El canje de mérito aún no está listo.";
-"merit.redeem.todo.ok" = "Vale";
 
 /* MARK: - Estado laboral */
 
@@ -66,7 +57,7 @@
 "about.version" = "Versión";
 "about.maintainer" = "Responsable";
 "about.section.changes" = "Novedades";
-"about.summary" = "Página de ajustes y notas de versión."
+"about.summary" = "Página de ajustes y notas de versión.";
 "about.section.links" = "Enlaces";
 "about.github" = "GitHub";
 
@@ -121,9 +112,14 @@
 
 "away.title" = "Bienvenido de nuevo";
 "away.body" = "Estuviste escaqueándote %1$@. La empresa te pagó %2$@ por ello.";
+"away.body.private" = "Estuviste escaqueándote %1$@.";
 "away.dismiss" = "Haz clic en cualquier parte para descartar";
 
 "display.section.appearance" = "Aspecto";
+"display.theme" = "Tema";
+"appearance.system" = "Seguir el sistema";
+"appearance.light" = "Claro";
+"appearance.dark" = "Oscuro";
 "display.menuBar" = "En la barra de menús";
 "display.menuBar.todayAmount" = "Ganancias de hoy";
 "display.menuBar.todayPercent" = "Progreso de hoy";
@@ -147,3 +143,106 @@
 "error.badResponse" = "No se pudo leer la respuesta del servicio de festivos";
 "error.httpStatus" = "El servicio de festivos devolvió HTTP %lld";
 "error.unsupportedCountry" = "No hay datos automáticos de festivos para esta región";
+
+/* MARK: - 税后 */
+"salary.payMode" = "Modo de pago";
+"salary.payMode.gross" = "Bruto";
+"salary.payMode.net" = "Neto";
+"salary.tax.section" = "Ajustes fiscales";
+"salary.tax.region" = "Región de referencia";
+"salary.tax.region.custom" = "Personalizado";
+"salary.tax.region.effective" = "Vigente desde";
+"salary.tax.region.checked" = "Verificado";
+"salary.tax.region.source" = "Fuente";
+"salary.tax.social" = "Seguridad social y fondo de vivienda";
+"salary.tax.pension" = "Pensión";
+"salary.tax.medical" = "Médico";
+"salary.tax.medicalFixed" = "Médico (fijo)";
+"salary.tax.unemployment" = "Desempleo";
+"salary.tax.housingFund" = "Fondo de vivienda";
+"salary.tax.rate" = "Tasa";
+"salary.tax.base" = "Base";
+"salary.tax.auto" = "Auto";
+"salary.tax.disabled" = "No pagado";
+"salary.tax.manual" = "Manual";
+"salary.tax.special" = "Deducción especial";
+"salary.tax.other" = "Otra deducción";
+"salary.tax.startMonth" = "Mes de inicio";
+"salary.tax.bonusMonth" = "Mes de bonus";
+"salary.tax.detail" = "Este mes";
+"salary.tax.gross" = "Bruto";
+"salary.tax.socialTotal" = "Social";
+"salary.tax.tax" = "Impuesto";
+"salary.tax.net" = "Neto";
+"salary.tax.year" = "Estimación anual";
+"salary.tax.note" = "Estimado con los ajustes actuales; el salario extra tributa junto.";
+"salary.tax.blocked" = "Neto no disponible";
+"salary.tax.notApplicable" = "El neto solo admite China continental (CNY).";
+
+/* MARK: - 隐私模式 */
+"privacy.section" = "Privacidad";
+"privacy.toggle" = "Modo privacidad";
+"privacy.toggle.detail" = "Oculta todos los importes por defecto. Toca un importe para mostrarlo y otra vez para ocultarlo.";
+"privacy.reveal" = "Mostrar importe";
+"privacy.hide" = "Ocultar importe";
+"privacy.autoHide" = "Los importes se ocultan a los 30 segundos.";
+
+/* MARK: - 工资历史 */
+"salary.history" = "Cambios de salario";
+"salary.history.add" = "Añadir cambio";
+"salary.history.edit" = "Editar cambio";
+"salary.history.effective" = "Vigente";
+"salary.history.amount" = "Importe";
+"salary.history.period" = "Periodo";
+"salary.history.monthsShort" = "%lld meses/año";
+"salary.history.empty" = "Sin cambios. El salario actual aplica desde el inicio.";
+"salary.history.hint" = "Los cambios aplican desde su fecha de vigencia. Editar o eliminar solo afecta a ese cambio.";
+"salary.history.save" = "Guardar";
+"salary.history.cancel" = "Cancelar";
+"salary.history.undo" = "Deshacer último cambio";
+
+/* MARK: - 加班 */
+"overtime.section" = "Horas extra";
+"overtime.start" = "Iniciar";
+"overtime.stop" = "Terminar";
+"overtime.kind.paid" = "Pagadas";
+"overtime.kind.unpaid" = "No pagadas";
+"overtime.multiplier" = "Multiplicador";
+"overtime.base" = "Tarifa base";
+"overtime.base.auto" = "La tarifa base se rellena según el salario vigente en la fecha de inicio.";
+"overtime.defaultKind" = "Tipo por defecto";
+"overtime.history" = "Historial";
+"overtime.history.empty" = "Sin horas extra registradas.";
+"overtime.backfill" = "Añadir";
+"overtime.edit" = "Editar";
+"overtime.undo" = "Deshacer último cambio";
+"overtime.normal" = "Salario normal";
+"overtime.ot" = "Horas extra";
+"overtime.total" = "Total";
+"overtime.breakdown.gross" = " (bruto)";
+"overtime.breakdown.net" = " (neto)";
+"overtime.loss" = "Horas extra no pagadas: perdido %@";
+"overtime.active" = "En curso…";
+"overtime.hint" = "Las horas extra cuentan solo tras tocar iniciar, después de tu hora de salida.";
+"overtime.error.overlap" = "Se solapa con horas normales o un registro existente.";
+"overtime.error.endBeforeStart" = "El fin debe ser posterior al inicio.";
+"overtime.error.future" = "El fin no puede estar en el futuro.";
+"overtime.error.alreadyActive" = "Ya hay horas extra en curso.";
+"overtime.error.notActive" = "No hay horas extra en curso.";
+"overtime.error.missing" = "Este registro ya no existe.";
+
+/* MARK: - 发薪账期 */
+"payroll.section" = "Día de pago y período";
+"payroll.enabled" = "Período personalizado";
+"payroll.cutoffDay" = "Día de corte: %lld";
+"payroll.paydayDay" = "Día de pago nominal: %lld";
+"payroll.offset" = "Mes de pago";
+"payroll.offset.sameMonth" = "Mismo mes";
+"payroll.offset.nextMonth" = "Mes siguiente";
+"payroll.example" = "Ejemplo: del 26 del mes anterior al 25 del mes, pago el 10 del mes siguiente.";
+"payroll.nextPayday" = "Próximo pago";
+"payroll.today" = "Hoy";
+"payroll.inDays" = "%lld días";
+"payroll.period" = "Período actual";
+"payroll.earned" = "Ganado este período";
+"payroll.earned.net" = "Ganado este período (neto)";
