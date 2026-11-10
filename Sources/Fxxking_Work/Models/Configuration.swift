@@ -237,8 +237,8 @@ struct Configuration: Codable, Equatable {
 
     /// 一天里真正计薪的时段，已经把午休挖掉。
     var paidIntervals: [ClosedRange<Int>] {
-        let start = min(startMinutes, endMinutes)
-        let end = max(startMinutes, endMinutes)
+        let start = startMinutes
+        let end = endMinutes
         guard end > start else { return [] }
         guard breakEnabled else { return [start...end] }
 

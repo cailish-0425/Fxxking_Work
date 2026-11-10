@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 隐私金额显示组件：无眼睛图标，点击金额区域显示、再点隐藏。
+/// 隐私金额显示组件：无眼睛图标，点击任意金额区域统一显示整块面板，再点统一隐藏。
 /// 隐藏态用无边框、可键盘访问的按钮承载「••••」，AX 说「点击显示金额」且不含原值。
 struct PrivacyAmount: View {
     @EnvironmentObject private var privacy: PrivacyController

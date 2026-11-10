@@ -534,7 +534,7 @@ private struct OvertimeHistoryView: View {
         }
     }
 
-    /// 单条加班记录的金额文案：有偿按基准 × 倍率，无偿按单倍基准折算机会损失。
+    /// 单条加班记录的金额文案：有偿按基准 × 倍率；无偿按单倍基准展示参考倒扣。
     private func overtimeAmount(_ session: OvertimeSession) -> String {
         let hours = session.elapsedSeconds(at: Date()) / 3600
         let amount = session.kind == .paid
@@ -763,16 +763,8 @@ private struct TaxTab: View {
     private var resolved: NetPayCalculator.ResolvedSocial {
         NetPayCalculator.resolve(
             profile: settings.config.tax,
-            grossMonthly: Money(yuan: settings.config.monthlyPay))
-    }
-
-    private var result: NetPayCalculator.Result {
-        NetPayCalculator.compute(
-            grossMonthly: Money(yuan: settings.config.monthlyPay),
-            payMonthsPerYear: settings.config.payMonthsPerYear,
-            profile: settings.config.tax,
-            countryCode: settings.config.countryCode,
-            currencyCode: settings.config.currencyCode)
+            grossMonthly: Money(yuan: ticker.engine.monthlyGross(on: Date()))
+        )
     }
 
     private var preset: TaxRegionPreset? {
@@ -803,9 +795,9 @@ private struct TaxTab: View {
             // 结果先于低频参数出现：切到税后不必展开折叠组就能看到本月明细。
             detailSection
 
-            if !result.blocked.isEmpty {
+            if !ticker.engine.netBlocked.isEmpty {
                 Section {
-                    ForEach(Array(result.blocked.enumerated()), id: \.offset) { i, message in
+                    ForEach(Array(ticker.engine.netBlocked.enumerated()), id: \.offset) { i, message in
                         Text(message)
                             .font(.caption)
                             .foregroundStyle(.red)
@@ -814,9 +806,9 @@ private struct TaxTab: View {
                     Text(Loc.t("salary.tax.blocked"))
                 }
             }
-            if !result.warnings.isEmpty {
+            if !ticker.engine.netWarnings.isEmpty {
                 Section {
-                    ForEach(Array(result.warnings.enumerated()), id: \.offset) { i, message in
+                    ForEach(Array(ticker.engine.netWarnings.enumerated()), id: \.offset) { i, message in
                         Text(message)
                             .font(.caption)
                             .foregroundStyle(.orange)
@@ -1034,7 +1026,7 @@ private struct TaxTab: View {
     @ViewBuilder
     private var detailSection: some View {
         Section {
-            if result.available, let month = result.months.first(where: { $0.gross.cents > 0 }) {
+            if let month = ticker.engine.currentMonthNetDetail(at: Date()) {
                 LabeledContent(Loc.t("salary.tax.gross")) {
                     Text(yuan(month.gross.doubleYuan))
                 }
@@ -1055,9 +1047,9 @@ private struct TaxTab: View {
         }
 
         Section {
-            if result.available {
+            if let yearNet = ticker.engine.currentYearNetTotal(at: Date()) {
                 LabeledContent(Loc.t("salary.tax.year")) {
-                    Text(yuan(result.yearNet.doubleYuan))
+                    Text(yuan(yearNet.doubleYuan))
                 }
                 Text(Loc.t("salary.tax.note")).font(.caption2).foregroundStyle(.secondary)
             }
@@ -1112,6 +1104,11 @@ private struct ScheduleTab: View {
                 DatePicker(
                     Loc.t("schedule.end"), selection: timeBinding($settings.config.endMinutes),
                     displayedComponents: .hourAndMinute)
+                if settings.config.endMinutes <= settings.config.startMinutes {
+                    Text(Loc.t("schedule.invalidRange"))
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
                 Toggle(Loc.t("schedule.breakToggle"), isOn: $settings.config.breakEnabled)
                 if settings.config.breakEnabled {
                     DatePicker(

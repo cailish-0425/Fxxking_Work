@@ -64,7 +64,7 @@ struct PayrollSummary: Equatable {
     var overtimePaid: Double = 0
     var totalGross: Double = 0
     var loss: Double = 0
-    /// 税后口径：regularGross/overtimePaid/totalGross 已是净额；loss 仍为税前基准。
+    /// 税后口径：regularGross/overtimePaid/totalGross 已是净额；loss 仍为仅展示的税前基准值。
     var netMode: Bool = false
 }
 
@@ -94,15 +94,30 @@ struct EarningsEngine {
     private var monthEarnedGross: Double = 0      // 当月已完整过去的工作日毛额（不含今天）
     private var yearRegularEarnedGross: Double = 0// 全年已完整过去的工作日毛额（不含今天）
 
-    /// 税后模式的逐月净额；nil 表示税前或税后不可用（blocked）。
-    /// - `netBaseMonths`：仅正常工资（不含任何加班）的逐月净额，供正常秒薪/日薪/away 使用，绝不混入加班。
-    /// - `netMonths`：正常 + 已结束有偿加班的逐月净额（进行中段在 snapshot 里作临时预测重算，不冻结进缓存）。
-    private var netBaseMonths: [NetPayCalculator.MonthlyNet]?
-    private var netMonths: [NetPayCalculator.MonthlyNet]?
-    /// 逐月正常毛额（工资历史分段后的每月值，1 月 = index 0）。
-    private var regularGrossPerMonth: [Money] = []
-    /// 已结束的有偿加班毛额按归属月拆（进行中段不含）。
-    private var otFinalByMonth: [Double] = Array(repeating: 0, count: 12)
+    private struct YearNetTables {
+        var regularGrossPerMonth: [Money]
+        var base: [NetPayCalculator.MonthlyNet]
+        var withFinishedOvertime: [NetPayCalculator.MonthlyNet]
+        var finishedOvertimeByMonth: [Double]
+    }
+
+    private struct YearMonthKey: Hashable {
+        var year: Int
+        var month: Int
+    }
+
+    /// 税后模式按年份保存逐月净额。账期可能跨年，不能让上一年 12 月误取今年 12 月的净额。
+    private var netTables: [Int: YearNetTables] = [:]
+    /// 当前年份“仅正常工资”的逐月净额，供正常秒薪/日薪/away 使用，绝不混入加班。
+    private var netBaseMonths: [NetPayCalculator.MonthlyNet]? { netTables[yearIndex]?.base }
+    /// 当前年份正常 + 已结束有偿加班的逐月净额；进行中段在 snapshot 中临时重算。
+    private var netMonths: [NetPayCalculator.MonthlyNet]? { netTables[yearIndex]?.withFinishedOvertime }
+    /// 当前年份逐月正常毛额（工资历史分段后）。
+    private var regularGrossPerMonth: [Money] { netTables[yearIndex]?.regularGrossPerMonth ?? [] }
+    /// 当前年份已结束的有偿加班毛额。
+    private var otFinalByMonth: [Double] {
+        netTables[yearIndex]?.finishedOvertimeByMonth ?? Array(repeating: 0, count: 12)
+    }
     /// 引擎锚定年份，用于税后逐月口径与加班归属。
     private var yearIndex: Int = 0
     /// 税后是否适用但被参数阻塞（供 UI 显示，不静默回退）。
@@ -168,55 +183,59 @@ struct EarningsEngine {
 
         // 税后：只在用户显式选择 net 时才计算，gross 路径零变化。
         if config.payMode == .net {
-            // 逐月正常毛额按工资历史分段后的每月值，再累计预扣，不再用今天工资重复推 12 月。
             yearIndex = calendar.component(.year, from: now)
-            var grossPerMonth: [Money] = []
-            for month in 1...12 {
-                grossPerMonth.append(Money(yuan: monthRegularGross(month: month, year: yearIndex)))
+            netTables = [:]
+            var currentFinalResult: NetPayCalculator.Result?
+            for year in [yearIndex - 1, yearIndex] {
+                var grossPerMonth: [Money] = []
+                for month in 1...12 {
+                    grossPerMonth.append(Money(yuan: monthRegularGross(month: month, year: year)))
+                }
+                let yearEnd = calendar.date(from: DateComponents(year: year, month: 12, day: 31)) ?? now
+                let extraMonths = max(config.payMonthsPerYear - 12, 0)
+                let bonusBaseMonthly: Money? = extraMonths > 0
+                    ? Money(yuan: schedule.monthlyGross(on: yearEnd))
+                    : nil
+                let finishedOT = finishedOTByMonth(forYear: year, at: now)
+
+                let base = Self.computeNet(
+                    grossPerMonth: grossPerMonth, otByMonth: nil,
+                    payMonthsPerYear: config.payMonthsPerYear, profile: config.tax,
+                    countryCode: config.countryCode, currencyCode: config.currencyCode,
+                    bonusBaseMonthly: bonusBaseMonthly, socialBasePerMonth: grossPerMonth)
+                let withFinished = Self.computeNet(
+                    grossPerMonth: grossPerMonth, otByMonth: finishedOT,
+                    payMonthsPerYear: config.payMonthsPerYear, profile: config.tax,
+                    countryCode: config.countryCode, currencyCode: config.currencyCode,
+                    bonusBaseMonthly: bonusBaseMonthly, socialBasePerMonth: grossPerMonth)
+                let activeOT = activeOTGrossByMonth(forYear: year, at: now)
+                var finalOT = finishedOT
+                for month in 0..<12 { finalOT[month] += activeOT[month] }
+                let final = Self.computeResult(
+                    grossPerMonth: Self.mergedGross(grossPerMonth, otByMonth: finalOT),
+                    otByMonth: nil,
+                    payMonthsPerYear: config.payMonthsPerYear, profile: config.tax,
+                    countryCode: config.countryCode, currencyCode: config.currencyCode,
+                    bonusBaseMonthly: bonusBaseMonthly, socialBasePerMonth: grossPerMonth
+                )
+                if year == yearIndex { currentFinalResult = final }
+
+                if let base, let withFinished {
+                    netTables[year] = YearNetTables(
+                        regularGrossPerMonth: grossPerMonth,
+                        base: base,
+                        withFinishedOvertime: withFinished,
+                        finishedOvertimeByMonth: finishedOT
+                    )
+                }
             }
-            regularGrossPerMonth = grossPerMonth
-
-            // 额外薪基准：与税前 bonusExtra 同源，取「年末正常月薪」（工资历史/基线/当前工资统一入口），
-            // 不含任何加班；税后累计预扣时传给 compute 作 bonusBaseMonthly，避免把 12 月加班毛额误当年终奖重复。
-            let extraMonths = max(config.payMonthsPerYear - 12, 0)
-            let bonusBaseMonthly: Money? = extraMonths > 0
-                ? Money(yuan: schedule.monthlyGross(on: calendar.date(from: DateComponents(year: yearIndex, month: 12, day: 31)) ?? now))
-                : nil
-            // 社保 auto 基数按「各月正常工资」逐月取值（工资历史分段），不随有偿加班抬高、不随今日月薪统一。
-            // grossPerMonth 本身即各月正常毛额（monthRegularGross 分段），作为 socialBasePerMonth 传入。
-            let socialBasePerMonth: [Money]? = grossPerMonth
-
-            // 已结束的有偿加班毛额按归属月拆（进行中段不含，见 snapshot 里的临时预测）。
-            otFinalByMonth = finishedOTByMonth(at: now)
-
-            // 仅正常工资的逐月净额（社保基数/扣除按各月正常工资解析，与加班基准口径分开）。
-            netBaseMonths = Self.computeNet(
-                grossPerMonth: grossPerMonth, otByMonth: nil,
-                payMonthsPerYear: config.payMonthsPerYear, profile: config.tax,
-                countryCode: config.countryCode, currencyCode: config.currencyCode,
-                bonusBaseMonthly: bonusBaseMonthly, socialBasePerMonth: socialBasePerMonth)
-            // 正常 + 已结束有偿加班毛额合并后重新累计预扣，得到最终月/年净额。
-            netMonths = Self.computeNet(
-                grossPerMonth: grossPerMonth, otByMonth: otFinalByMonth,
-                payMonthsPerYear: config.payMonthsPerYear, profile: config.tax,
-                countryCode: config.countryCode, currencyCode: config.currencyCode,
-                bonusBaseMonthly: bonusBaseMonthly, socialBasePerMonth: socialBasePerMonth)
-
-            // 阻塞/提示口径：与最终计算同口径（合并已结束加班毛额后 compute，socialBase 用各月正常工资），
-            // 避免 netBlocked 漏掉因 OT 抬毛额才出现的参数错误（如某月缴费超毛额）。
-            let final = Self.computeResult(
-                grossPerMonth: Self.mergedGross(grossPerMonth, otByMonth: otFinalByMonth), otByMonth: nil,
-                payMonthsPerYear: config.payMonthsPerYear, profile: config.tax,
-                countryCode: config.countryCode, currencyCode: config.currencyCode,
-                bonusBaseMonthly: bonusBaseMonthly, socialBasePerMonth: socialBasePerMonth)
-            netBlocked = final.blocked
-            netWarnings = final.warnings
+            if let currentFinalResult {
+                netBlocked = currentFinalResult.blocked
+                netWarnings = currentFinalResult.warnings
+            }
         } else {
             yearIndex = calendar.component(.year, from: now)
-            regularGrossPerMonth = []
-            otFinalByMonth = Array(repeating: 0, count: 12)
-            netMonths = nil
-            netBaseMonths = nil
+            netTables = [:]
             netBlocked = []
             netWarnings = []
         }
@@ -303,23 +322,44 @@ struct EarningsEngine {
         return NetPayCalculator.monthNet(netMonths, for: month)?.cents
     }
 
+    func netBaseCents(forMonth month: Int, year: Int) -> Int64? {
+        netTables[year].flatMap { NetPayCalculator.monthNet($0.base, for: month)?.cents }
+    }
+
+    /// 当前月份的税后明细，包含工资历史、已结束/进行中有偿加班和 13/14 薪。
+    func currentMonthNetDetail(at now: Date) -> NetPayCalculator.MonthlyNet? {
+        finalMonths(at: now)?.first { $0.month == monthIndex }
+    }
+
+    /// 当前年份的税后总额，包含工资历史、有偿加班和 13/14 薪。
+    func currentYearNetTotal(at now: Date) -> Money? {
+        finalMonths(at: now).map {
+            $0.reduce(Money.zero) { partial, month in partial + month.net }
+        }
+    }
+
     /// 某时刻含「已结束 + 进行中已发生」加班后的最终逐月净额；无活跃 paid 段时复用缓存 netMonths。
     private func finalMonths(at now: Date) -> [NetPayCalculator.MonthlyNet]? {
-        guard netBaseMonths != nil else { return nil }
-        let active = activeOTGrossByMonth(at: now)
+        finalMonths(forYear: yearIndex, at: now)
+    }
+
+    private func finalMonths(forYear year: Int, at now: Date) -> [NetPayCalculator.MonthlyNet]? {
+        guard let tables = netTables[year] else { return nil }
+        let active = activeOTGrossByMonth(forYear: year, at: now)
         let hasActive = active.contains { $0 > 0 }
-        if !hasActive { return netMonths }
-        var combined = otFinalByMonth
+        if !hasActive { return tables.withFinishedOvertime }
+        var combined = tables.finishedOvertimeByMonth
         for m in 0..<12 { combined[m] += active[m] }
         let extraMonths = max(config.payMonthsPerYear - 12, 0)
         let bonusBaseMonthly: Money? = extraMonths > 0
-            ? Money(yuan: schedule.monthlyGross(on: calendar.date(from: DateComponents(year: yearIndex, month: 12, day: 31)) ?? now))
+            ? Money(yuan: schedule.monthlyGross(
+                on: calendar.date(from: DateComponents(year: year, month: 12, day: 31)) ?? now))
             : nil
         return Self.computeNet(
-            grossPerMonth: regularGrossPerMonth, otByMonth: combined,
+            grossPerMonth: tables.regularGrossPerMonth, otByMonth: combined,
             payMonthsPerYear: config.payMonthsPerYear, profile: config.tax,
             countryCode: config.countryCode, currencyCode: config.currencyCode,
-            bonusBaseMonthly: bonusBaseMonthly, socialBasePerMonth: regularGrossPerMonth)
+            bonusBaseMonthly: bonusBaseMonthly, socialBasePerMonth: tables.regularGrossPerMonth)
     }
 
     /// 某月「仅正常」净额（元），供正常秒薪/日薪/away 使用（不混加班）。
@@ -345,7 +385,6 @@ struct EarningsEngine {
                 ? (baseMonthNetYuan / Double(monthWorkdays)) / paidSecondsPerDay : 0
             result.monthTotal = monthNetYuan
             result.yearTotal = yearNetYuan
-
             let nowMinutes = minutesSinceMidnight(now)
             let paidElapsedMinutes = elapsedPaidMinutes(upTo: nowMinutes)
             let paidTotalMinutes = Double(config.paidMinutesPerDay)
@@ -502,21 +541,34 @@ struct EarningsEngine {
         // 真实已赚 = period.start ..< min(now, end) 的正常毛额（跨月不能只用今日时薪乘天数）。
         let earnEnd = min(now, period.endExclusive)
 
-        // 税后：按统一 NetPayCalculator 净额分配求跨月各段净额，正常与有偿拆分，无偿不扣合计。
+        // 税后：按统一 NetPayCalculator 净额分配求跨月各段净额，正常与有偿拆分，无偿仅单独展示。
         // 不写第二套税表：正常净额按计薪秒交集逐秒累进，有偿净额 = 当月最终净额 − 仅正常净额的增量。
         if netMonths != nil, netBaseMonths != nil {
             result.regularGross = netRegularEarned(in: DateInterval(start: period.start, end: earnEnd), upTo: earnEnd)
             let otIncrement = netOvertimeIncrementByMonth(at: now)
             result.overtimePaid = netOvertimeEarned(
                 in: DateInterval(start: period.start, end: earnEnd), upTo: now, incrementByMonth: otIncrement)
-            result.totalGross = result.regularGross + result.overtimePaid
             // 无偿损失仍按税前基准计（不进 net），单独展示。
             result.loss = grossOvertimeLoss(in: DateInterval(start: period.start, end: earnEnd), upTo: now)
+            result.totalGross = result.regularGross + result.overtimePaid
             result.netMode = true
             return result
         }
 
-        result.regularGross = grossEarned(in: DateInterval(start: period.start, end: earnEnd), upTo: earnEnd)
+        let todayStart = calendar.startOfDay(for: now)
+        result.regularGross = grossEarned(
+            in: DateInterval(start: period.start, end: earnEnd),
+            upTo: min(todayStart, period.endExclusive)
+        )
+        if workCalendar.isWorkday(now),
+            todayStart >= period.start,
+            todayStart < period.endExclusive
+        {
+            let from = max(period.start, todayStart)
+            let to = min(now, period.endExclusive)
+            let seconds = paidSeconds(on: todayStart, between: from, and: to)
+            result.regularGross += seconds / config.paidSecondsPerDay * dailyPay(for: todayStart)
+        }
 
         // 有偿加班/无偿损失：落在账期范围内的部分（按发生日拆），复用加班 ledger 同一分配规则。
         let ledger = OvertimeLedger(sessions: config.overtimeSessions)
@@ -535,30 +587,14 @@ struct EarningsEngine {
     }
 
     /// 已结束的有偿加班毛额，按归属月拆成 12 个月（进行中的段排除在外，保证缓存只在无活跃 paid 段时有效）。
-    private func finishedOTByMonth(at now: Date) -> [Double] {
+    private func finishedOTByMonth(forYear year: Int, at now: Date) -> [Double] {
         var result = [Double](repeating: 0, count: 12)
-        for session in config.overtimeSessions where !session.isActive && session.kind == .paid {
-            let end = session.end ?? now
-            guard end > session.start else { continue }
-            var day = calendar.startOfDay(for: session.start)
-            while day < end {
-                if workCalendar.isWorkday(day) {
-                    let dayEnd = calendar.date(byAdding: .day, value: 1, to: day) ?? end
-                    let from = max(session.start, day)
-                    let to = min(end, dayEnd)
-                    let seconds = OvertimeLedger.overtimeSeconds(
-                        on: day, between: from, and: to, config: config, calendar: calendar)
-                    if seconds > 0 {
-                        let month = calendar.component(.month, from: day)
-                        let year = calendar.component(.year, from: day)
-                        if year == yearIndex {
-                            result[month - 1] += seconds / 3600 * session.baseHourlyGross * Double(session.multiplier)
-                        }
-                    }
-                }
-                guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
-                day = next
-            }
+        let ledger = OvertimeLedger(
+            sessions: config.overtimeSessions.filter { !$0.isActive && $0.kind == .paid })
+        for seg in ledger.segments(
+            at: now, config: config, workCalendar: workCalendar, calendar: calendar)
+        where seg.year == year {
+            result[seg.month - 1] += seg.seconds / 3600 * seg.baseHourlyGross * Double(seg.multiplier)
         }
         return result
     }
@@ -581,9 +617,10 @@ struct EarningsEngine {
     /// 某一天在 [between, and] 范围内、且落在正常计薪时段里的净额（按计薪秒逐秒累进）。
     /// 完整过去工作日：计薪秒满额 → 该月净日薪；今天：只计已过去付薪秒 → perSecond × 秒。
     private func netPaidAmount(on day: Date, between from: Date, and to: Date) -> Double {
-        guard let netBaseMonths else { return 0 }
+        let year = calendar.component(.year, from: day)
+        guard let tables = netTables[year] else { return 0 }
         let m = calendar.component(.month, from: day)
-        guard let net = NetPayCalculator.monthNet(netBaseMonths, for: m) else { return 0 }
+        guard let net = NetPayCalculator.monthNet(tables.base, for: m) else { return 0 }
         let count = workCalendar.workdaysInMonth(containing: day)
         guard count > 0, config.paidSecondsPerDay > 0 else { return 0 }
         let netDaily = net.doubleYuan / Double(count)
@@ -596,24 +633,30 @@ struct EarningsEngine {
 
     /// 税后：账期区间内有偿加班的净额（= 当月最终净额 − 当月仅正常净额的增量，按加班段税前毛额占比摊分）。
     /// 不把税前加班直接加 net；增量由统一累计预扣的月净额差值得出，天然含税。
-    private func netOvertimeIncrementByMonth(at now: Date) -> [Int: Double] {
-        guard let netBaseMonths else { return [:] }
+    private func netOvertimeIncrementByMonth(at now: Date) -> [YearMonthKey: Double] {
+        guard isNetActive else { return [:] }
         // 用 finalMonths(at:) 取「含进行中段临时预测」的最终净额，而非仅已结束段的 netMonths 缓存；
         // 无活跃段时 finalMonths 回退 netMonths，天然连续不重复（D3 修复）。
-        guard let finalMonths = finalMonths(at: now) else { return [:] }
-        var increments: [Int: Double] = [:]
-        for month in 1...12 {
-            guard let withOT = NetPayCalculator.monthNet(finalMonths, for: month)?.doubleYuan,
-                let base = NetPayCalculator.monthNet(netBaseMonths, for: month)?.doubleYuan
+        var increments: [YearMonthKey: Double] = [:]
+        for year in netTables.keys {
+            guard let withOT = finalMonths(forYear: year, at: now),
+                let base = netTables[year]?.base
             else { continue }
-            let delta = withOT - base
-            if delta > 0 { increments[month] = delta }
+            for month in 1...12 {
+                guard let withOTNet = NetPayCalculator.monthNet(withOT, for: month)?.doubleYuan,
+                    let baseNet = NetPayCalculator.monthNet(base, for: month)?.doubleYuan
+                else { continue }
+                let delta = withOTNet - baseNet
+                if delta > 0 {
+                    increments[YearMonthKey(year: year, month: month)] = delta
+                }
+            }
         }
         return increments
     }
 
     private func netOvertimeEarned(
-        in interval: DateInterval, upTo now: Date, incrementByMonth: [Int: Double]
+        in interval: DateInterval, upTo now: Date, incrementByMonth: [YearMonthKey: Double]
     ) -> Double {
         guard !incrementByMonth.isEmpty else { return 0 }
         let ledger = OvertimeLedger(sessions: config.overtimeSessions)
@@ -621,7 +664,8 @@ struct EarningsEngine {
         var total = 0.0
         for seg in segs where seg.kind == .paid {
             guard seg.day >= interval.start, seg.day < interval.end else { continue }
-            guard let monthDelta = incrementByMonth[seg.month] else { continue }
+            let key = YearMonthKey(year: seg.year, month: seg.month)
+            guard let monthDelta = incrementByMonth[key] else { continue }
             // 该月有偿加班毛额，用于按比例摊分月净额增量到本段。
             let monthOTGross = ledger.paidOvertimeGross(
                 byMonth: seg.year, at: now, config: config, workCalendar: workCalendar, calendar: calendar)[seg.month - 1]
@@ -639,13 +683,13 @@ struct EarningsEngine {
         config.overtimeSessions.contains { $0.isActive && $0.kind == .paid }
     }
 
-    /// 进行中有偿加班段截至 now 的税前毛额，按归属月拆成 12 个月（index 0 = 1 月）。
-    private func activeOTGrossByMonth(at now: Date) -> [Double] {
+    /// 指定年份进行中有偿加班截至 now 的税前毛额，按归属月拆成 12 个月。
+    private func activeOTGrossByMonth(forYear year: Int, at now: Date) -> [Double] {
         var result = [Double](repeating: 0, count: 12)
         for session in config.overtimeSessions where session.isActive && session.kind == .paid {
             let ledger = OvertimeLedger(sessions: [session])
             for seg in ledger.segments(at: now, config: config, workCalendar: workCalendar, calendar: calendar)
-            where seg.kind == .paid && seg.year == yearIndex {
+            where seg.kind == .paid && seg.year == year {
                 result[seg.month - 1] += seg.seconds / 3600 * seg.baseHourlyGross * Double(seg.multiplier)
             }
         }
@@ -794,9 +838,10 @@ struct EarningsEngine {
 
     /// 税后模式的某日净日薪：按那一天所在月的「仅正常」净额折算，跨月各按当月净额；加班不摊进正常计薪。
     private func dailyNet(for day: Date) -> Double {
-        guard let netBaseMonths else { return dailyPay(for: day) }
+        let year = calendar.component(.year, from: day)
+        guard let tables = netTables[year] else { return dailyPay(for: day) }
         let m = calendar.component(.month, from: day)
-        guard let net = NetPayCalculator.monthNet(netBaseMonths, for: m) else { return 0 }
+        guard let net = NetPayCalculator.monthNet(tables.base, for: m) else { return 0 }
         let count = workCalendar.workdaysInMonth(containing: day)
         return count > 0 ? net.doubleYuan / Double(count) : 0
     }

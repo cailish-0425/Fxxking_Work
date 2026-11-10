@@ -7,7 +7,7 @@ APP_NAME="Fxxking Work"
 EXECUTABLE="Fxxking_Work"
 BUNDLE_ID="dev.cailish-0425.Fxxking-Work"
 # CI 发版时用 tag 覆盖，本地构建保持默认值。
-VERSION="${VERSION:-1.2.3}"
+VERSION="${VERSION:-1.2.4}"
 DEPLOYMENT_TARGET="14.0"
 
 # 默认输出到仓库 dist；隔离验证可用 DIST_DIR 指到别处，避免动正式产物。

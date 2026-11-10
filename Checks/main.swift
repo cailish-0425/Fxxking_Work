@@ -73,6 +73,11 @@ do {
     nightOwl.endMinutes = 23 * 60
     nightOwl.breakEnabled = true
     expect(nightOwl.paidMinutesPerDay == 60, "午休落在工作时段之外时不应被扣除")
+
+    var reversedSchedule = config
+    reversedSchedule.startMinutes = 22 * 60
+    reversedSchedule.endMinutes = 6 * 60
+    expect(reversedSchedule.paidMinutesPerDay == 0, "下班早于上班时不静默折算成反班次")
 }
 
 // MARK: - 工作日判定
@@ -1309,6 +1314,29 @@ do {
     let unpaid = summary(multiplier: 3, kind: .unpaid)
     expectClose(unpaid.dayPaid, 0, "无偿加班不产生加班工资")
     expectClose(unpaid.dayLoss, 150, "无偿按 1 倍基准计损失 150，与倍率无关")
+
+    let pausedLedger = OvertimeLedger(sessions: [
+        OvertimeSession(
+            start: date("2026-08-04 18:30:00"),
+            end: date("2026-08-04 20:00:00"),
+            kind: .unpaid,
+            multiplier: 1,
+            baseHourlyGross: 100,
+            currencyCode: "CNY",
+            pauses: [
+                OvertimePause(
+                    start: date("2026-08-04 19:00:00"),
+                    end: date("2026-08-04 19:30:00")
+                )
+            ])
+    ])
+    let paused = pausedLedger.summary(
+        at: date("2026-08-04 21:00:00"),
+        config: config,
+        workCalendar: wc,
+        calendar: calendar
+    )
+    expectClose(paused.dayLoss, 100, "锁屏/熄屏暂停的半小时不计入无偿倒扣")
 }
 
 // MARK: - 加班：跨午夜/跨月年拆分与归属
@@ -1334,6 +1362,25 @@ do {
     let by2027 = ledgerYear.paidOvertimeGross(byMonth: 2027, at: date("2027-01-02 10:00:00"), config: config, workCalendar: wc, calendar: calendar)
     expectClose(by2026[11], 200, "2026-12-31 的 2 小时归 2026 年 12 月")
     expectClose(by2027[0], 200, "2027-01-01 的 2 小时归 2027 年 1 月")
+
+    // 凌晨 2 点自动结束：00:30 开始且未手动停止，03:00 汇总时只计到 02:00。
+    let overnight = OvertimeLedger(sessions: [
+        OvertimeSession(
+            start: date("2026-08-05 00:30:00"),
+            end: nil,
+            kind: .paid,
+            multiplier: 1,
+            baseHourlyGross: 100,
+            currencyCode: "CNY"
+        )
+    ])
+    let overnightSummary = overnight.summary(
+        at: date("2026-08-05 03:00:00"),
+        config: config,
+        workCalendar: wc,
+        calendar: calendar
+    )
+    expectClose(overnightSummary.dayPaid, 150, "凌晨 2 点自动截止，00:30 到 02:00 只计 1.5 小时")
 }
 
 // MARK: - 加班：重启持久化与历史价不被重价
@@ -1366,6 +1413,25 @@ do {
     let a = OvertimeSession(start: date("2026-08-04 18:30:00"), end: date("2026-08-04 20:00:00"),
                             kind: .paid, multiplier: 1, baseHourlyGross: 100, currencyCode: "CNY")
     _ = ledger.addBackfill(a, now: date("2026-08-05 10:00:00"), config: config, workCalendar: wc, calendar: calendar)
+
+    let capped = OvertimeSession(
+        start: date("2026-08-04 23:00:00"),
+        end: date("2026-08-05 04:00:00"),
+        kind: .paid,
+        multiplier: 1,
+        baseHourlyGross: 100,
+        currencyCode: "CNY"
+    )
+    var cappedLedger = OvertimeLedger(sessions: [])
+    let cappedResult = cappedLedger.addBackfill(
+        capped, now: date("2026-08-05 10:00:00"),
+        config: config, workCalendar: wc, calendar: calendar
+    )
+    if case .success(let saved) = cappedResult {
+        expect(saved.end == date("2026-08-05 02:00:00"), "补录结束时间超过凌晨 2 点时自动截到 2 点")
+    } else {
+        expect(false, "合法的跨午夜补录应成功")
+    }
 
     // 与既有段重叠 → 拒绝。
     let overlap = OvertimeSession(start: date("2026-08-04 19:00:00"), end: date("2026-08-04 21:00:00"),
@@ -1405,7 +1471,31 @@ do {
     expect(hourly.isFinite, "时薪基准有限")
 }
 
-// MARK: - 加班：税后有偿并入 gross 重新累计预扣，无偿不进入税后
+// MARK: - 加班：有偿并入工资，无偿只在加班区展示参考倒扣
+
+do {
+    let config = baseConfig()
+    let baseSnapshot = engine(config, now: date("2026-08-04 21:00:00"))
+        .snapshot(at: date("2026-08-04 21:00:00"))
+
+    var unpaidConfig = config
+    unpaidConfig.overtimeSessions = [
+        OvertimeSession(start: date("2026-08-04 18:30:00"), end: date("2026-08-04 20:00:00"),
+                        kind: .unpaid, multiplier: 1, baseHourlyGross: 100, currencyCode: "CNY")
+    ]
+    let unpaidSnapshot = engine(unpaidConfig, now: date("2026-08-04 21:00:00"))
+        .snapshot(at: date("2026-08-04 21:00:00"))
+
+    expectClose(baseSnapshot.dayEarned, unpaidSnapshot.dayEarned, "无偿加班不减少今日工资")
+    expectClose(baseSnapshot.monthEarned, unpaidSnapshot.monthEarned, "无偿加班不减少本月工资")
+    expectClose(baseSnapshot.yearEarned, unpaidSnapshot.yearEarned, "无偿加班不减少本年工资")
+
+    // 跨天后今日金额从当天重新计算，不承接前一天的 100% 进度。
+    let nextMorning = engine(config, now: date("2026-08-05 09:00:00"))
+        .snapshot(at: date("2026-08-05 09:00:00"))
+    expectClose(nextMorning.dayEarned, 0, "次日上班起点今日已赚归零重算")
+    expectClose(nextMorning.dayFraction, 0, "次日上班起点今日进度归零")
+}
 
 do {
     var config = baseConfig()
@@ -1440,14 +1530,38 @@ do {
         expect(paidNet > baseNet, "有偿加班并入毛额后 8 月净额增加（重新累计预扣）")
     }
 
-    // 无偿加班：净额不变。
+    // 休息日的有偿加班也必须并入税后累计预扣，不能只处理工作日加班。
+    var weekendConfig = config
+    weekendConfig.overtimeSessions = [
+        OvertimeSession(
+            start: date("2026-08-02 10:00:00"),
+            end: date("2026-08-02 12:00:00"),
+            kind: .paid,
+            multiplier: 1,
+            baseHourlyGross: 100,
+            currencyCode: "CNY"
+        )
+    ]
+    let eWeekend = engine(weekendConfig, now: date("2026-08-04 21:00:00"))
+    expect(
+        eWeekend.netCents(forMonth: 8) != nil && baseNet != nil
+            && eWeekend.netCents(forMonth: 8)! > baseNet!,
+        "休息日有偿加班同样并入税后月度净额"
+    )
+
+    // 无偿加班只形成展示值，不改累计预扣、今日、月度或年度工资。
     var unpaidConfig = config
     unpaidConfig.overtimeSessions = [
         OvertimeSession(start: date("2026-08-04 18:30:00"), end: date("2026-08-04 20:30:00"),
                         kind: .unpaid, multiplier: 1, baseHourlyGross: 100, currencyCode: "CNY")
     ]
     let eUnpaid = engine(unpaidConfig, now: date("2026-08-04 21:00:00"))
-    expect(eUnpaid.netCents(forMonth: 8) == baseNet, "无偿加班不进入税后净额")
+    expect(eUnpaid.netCents(forMonth: 8) == baseNet, "无偿加班不改变累计预扣的税后净额")
+    let baseSnapshot = e0.snapshot(at: date("2026-08-04 21:00:00"))
+    let unpaidSnapshot = eUnpaid.snapshot(at: date("2026-08-04 21:00:00"))
+    expectClose(baseSnapshot.dayEarned, unpaidSnapshot.dayEarned, "税后视图今日工资不受无偿加班影响")
+    expectClose(baseSnapshot.monthEarned, unpaidSnapshot.monthEarned, "税后视图本月工资不受无偿加班影响")
+    expectClose(baseSnapshot.yearEarned, unpaidSnapshot.yearEarned, "税后视图本年工资不受无偿加班影响")
 }
 
 // MARK: - 发薪账期：本账期已赚（正常/加班/合计，复用历史工资与加班 ledger）
@@ -1467,6 +1581,19 @@ do {
 
     // 26~25 账期：2026-05-15 落在 4/26~5/25 账期。
     let e = engine(config, now: date("2026-05-15 10:00:00"))
+    let beforeWork = e.payrollSummary(at: date("2026-05-15 08:00:00"))
+    let shiftStart = e.payrollSummary(at: date("2026-05-15 09:00:00"))
+    let oneHour = e.payrollSummary(at: date("2026-05-15 10:00:00"))
+    expectClose(
+        beforeWork.regularGross,
+        shiftStart.regularGross,
+        "账期已赚在上班前不提前计入当天整日工资"
+    )
+    expectClose(
+        oneHour.regularGross - shiftStart.regularGross,
+        e.perSecondRate * 3600,
+        "账期已赚当天按计薪秒逐秒增长"
+    )
     let s = e.payrollSummary(at: date("2026-05-15 10:00:00"))
     expect(s.period != nil, "启用账期有本账期汇总")
     expect(s.remainingDays != nil && s.remainingDays! >= 0, "发薪倒计时非负")
@@ -1475,7 +1602,7 @@ do {
     }
     expect(s.totalGross >= 0, "本账期已赚非负")
 
-    // 加班落在账期内的部分并入合计（有偿），损失不扣合计。
+    // 加班落在账期内的部分并入合计（有偿）；无偿只单列展示，不从合计扣除。
     var withOT = config
     withOT.overtimeSessions = [
         OvertimeSession(start: date("2026-05-06 18:30:00"), end: date("2026-05-06 20:30:00"),
@@ -1486,8 +1613,12 @@ do {
     let eOT = engine(withOT, now: date("2026-05-15 10:00:00"))
     let sOT = eOT.payrollSummary(at: date("2026-05-15 10:00:00"))
     expectClose(sOT.overtimePaid, 200, "账期内有偿加班 2h×100 = 200")
-    expectClose(sOT.loss, 100, "账期内无偿损失 1h×100 = 100，不扣合计")
-    expect(sOT.totalGross >= sOT.regularGross + sOT.overtimePaid - 0.001, "合计 = 正常 + 有偿加班（损失不计）")
+    expectClose(sOT.loss, 100, "账期内无偿展示倒扣 1h×100 = 100")
+    expectClose(
+        sOT.totalGross,
+        sOT.regularGross + sOT.overtimePaid,
+        "合计 = 正常 + 有偿加班，无偿不计入工资"
+    )
 }
 
 // MARK: - 发薪账期：税后本账期净额分配（自然月整月 = monthNet，跨月 = 各月截取之和）
@@ -1532,14 +1663,87 @@ do {
     let netNoOT = eBase.netCents(forMonth: 1).map { Double($0) / 100 } ?? 0
     expectClose(netBase - netNoOT, 242.5, "有偿税前 250 在 1 月净增 242.5（3% 档内净额差）", tolerance: 0.01)
 
-    // 无偿加班：切模式两种工资均不受影响（net 总额与税前合计均不变）。
+    // 无偿加班不改变累计预扣或展示工资。
     var unpaid = config
     unpaid.overtimeSessions = [
         OvertimeSession(start: date("2026-01-06 18:30:00"), end: date("2026-01-06 19:30:00"),
                         kind: .unpaid, multiplier: 1, baseHourlyGross: 100, currencyCode: "CNY"),
     ]
     let eUnpaid = engine(unpaid, now: date("2026-01-31 18:00:00"))
-    expect(eUnpaid.netCents(forMonth: 1) == eBase.netCents(forMonth: 1), "无偿加班 net 净额不变")
+    expect(eUnpaid.netCents(forMonth: 1) == eBase.netCents(forMonth: 1), "无偿加班不改变累计预扣后的税后缓存")
+
+    // 跨年账期：2025-12 必须使用 2025 年净额，不能读取有年终奖的 2026-12。
+    var crossYear = config
+    crossYear.payMonthsPerYear = 14
+    crossYear.salaryAmount = 20000
+    crossYear.salaryBaseline = SalaryBaseline(
+        amount: 10000,
+        period: .monthly,
+        payMonthsPerYear: 14
+    )
+    crossYear.salaryHistory = [
+        SalaryVersion(
+            effectiveDate: "2026-01-01",
+            amount: 20000,
+            period: .monthly,
+            payMonthsPerYear: 14
+        )
+    ]
+    crossYear.payroll = PayrollSettings(enabled: true, cutoffDay: 25, paydayDay: 10, offset: .nextMonth)
+    let crossNow = date("2026-01-12 08:00:00")
+    let crossEngine = engine(crossYear, now: crossNow)
+    let crossSummary = crossEngine.payrollSummary(at: crossNow)
+    expect(crossSummary.period != nil, "跨年账期可生成")
+    let dec2025 = crossEngine.netBaseCents(forMonth: 12, year: 2025)
+    let dec2026 = crossEngine.netBaseCents(forMonth: 12, year: 2026)
+    expect(dec2025 != nil && dec2026 != nil && dec2025! != dec2026!, "2025/2026 年 12 月净额按月加年份分开")
+
+    if let period = crossSummary.period {
+        let wc = WorkCalendar(config: crossYear, autoHolidays: [], calendar: calendar)
+        var expected = 0.0
+        var cursor = period.start
+        let end = calendar.startOfDay(for: crossNow)
+        while cursor < end {
+            if wc.isWorkday(cursor) {
+                let year = calendar.component(.year, from: cursor)
+                let month = calendar.component(.month, from: cursor)
+                let count = wc.workdaysInMonth(containing: cursor)
+                if count > 0, let cents = crossEngine.netBaseCents(forMonth: month, year: year) {
+                    expected += Double(cents) / 100 / Double(count)
+                }
+            }
+            cursor = calendar.date(byAdding: .day, value: 1, to: cursor) ?? end
+        }
+        expectClose(
+            crossSummary.regularGross,
+            expected,
+            "跨年账期正常净额按各归属年份逐日累计",
+            tolerance: 0.02
+        )
+    }
+
+    // 设置页与主面板共用当前月明细：12 月必须显示当月，而不是首个有毛额的月份。
+    var decemberConfig = config
+    decemberConfig.salaryAmount = 10000
+    decemberConfig.payMonthsPerYear = 14
+    decemberConfig.tax.employmentStartMonth = 1
+    decemberConfig.tax.bonusMonth = 12
+    let decemberEngine = engine(decemberConfig, now: date("2026-12-31 12:00:00"))
+    let decemberDetail = decemberEngine.currentMonthNetDetail(at: date("2026-12-31 12:00:00"))
+    expectClose(
+        decemberDetail.map { $0.gross.doubleYuan } ?? 0,
+        30000,
+        "设置页本月明细取当前 12 月并包含 13/14 薪"
+    )
+
+    var invalidBonus = decemberConfig
+    invalidBonus.tax.employmentStartMonth = 3
+    invalidBonus.tax.bonusMonth = 2
+    let invalidBonusEngine = engine(invalidBonus, now: date("2026-12-31 12:00:00"))
+    expect(
+        invalidBonusEngine.netBlocked.contains { $0.contains("发放月份早于任职起月") },
+        "额外薪月份早于任职起月时明确阻塞，而不是静默丢失"
+    )
 
     // —— 税后账期「真实已赚」逐秒累进（不先计满天）——
     // 自然月账期（cutoff=1 → 账期含整月），今天 2026-05-15 是工作日（周五，9:00-18:00，午休 12-13）。

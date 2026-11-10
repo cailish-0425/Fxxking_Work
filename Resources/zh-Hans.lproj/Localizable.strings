@@ -16,8 +16,6 @@
 "menu.action.refresh" = "刷新假日";
 "menu.action.settings" = "设置…";
 "menu.action.quit" = "退出";
-"menu.mode.net" = "（税后）";
-"menu.mode.gross" = "（税前）";
 
 /* MARK: - 工作状态 */
 
@@ -87,6 +85,7 @@
 "schedule.section.hours" = "作息";
 "schedule.start" = "上班";
 "schedule.end" = "下班";
+"schedule.invalidRange" = "下班时间须晚于上班时间；暂不支持跨夜班次。";
 "schedule.breakToggle" = "扣除午休（不计薪）";
 "schedule.breakStart" = "午休开始";
 "schedule.breakEnd" = "午休结束";
@@ -185,9 +184,9 @@
 /* MARK: - 隐私模式 */
 "privacy.section" = "隐私";
 "privacy.toggle" = "隐私模式";
-"privacy.toggle.detail" = "隐藏菜单栏和主面板金额，点击金额显示、再点隐藏；设置中的金额保持可见。";
-"privacy.reveal" = "显示金额";
-"privacy.hide" = "隐藏金额";
+"privacy.toggle.detail" = "隐藏菜单栏和主面板金额。点击任意金额统一显示全部金额，再点统一隐藏；设置中的金额保持可见。";
+"privacy.reveal" = "显示全部金额";
+"privacy.hide" = "隐藏全部金额";
 "privacy.autoHide" = "金额 30 秒后自动隐藏。";
 
 /* MARK: - 工资历史 */
@@ -221,12 +220,10 @@
 "overtime.undo" = "撤销最近操作";
 "overtime.normal" = "正常工资";
 "overtime.ot" = "加班工资";
-"overtime.total" = "合计";
-"overtime.breakdown.gross" = "（税前）";
-"overtime.breakdown.net" = "（税后）";
-"overtime.loss" = "无偿加班：赔了 %@";
+"overtime.total" = "工资合计（含有偿加班）";
+"overtime.loss" = "无偿加班展示倒扣 %@（不计入工资）";
 "overtime.active" = "计时中…";
-"overtime.hint" = "需在下班时刻后手动点开始，才计入加班。";
+"overtime.hint" = "下班后手动开始；锁屏或熄屏时暂停，最晚到凌晨 2:00 自动结束。";
 "overtime.error.overlap" = "与正常计薪时段或既有加班记录重叠。";
 "overtime.error.endBeforeStart" = "结束须晚于开始。";
 "overtime.error.future" = "结束不能在未来。";
@@ -248,4 +245,3 @@
 "payroll.inDays" = "%lld 天后";
 "payroll.period" = "本账期";
 "payroll.earned" = "本账期已赚";
-"payroll.earned.net" = "本账期已赚（税后）";

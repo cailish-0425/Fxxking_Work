@@ -1,3 +1,4 @@
+import AppKit
 import Combine
 import Foundation
 
@@ -10,10 +11,36 @@ final class OvertimeController: ObservableObject {
 
     private let settings: SettingsStore
     private let engine: () -> EarningsEngine
+    private let lockMonitor = ScreenLockMonitor()
+    private var automaticEndTask: Task<Void, Never>?
+    nonisolated(unsafe) private var terminationObserver: NSObjectProtocol?
 
     init(settings: SettingsStore, engine: @escaping () -> EarningsEngine) {
         self.settings = settings
         self.engine = engine
+        self.active = ledger.active
+
+        lockMonitor.onPause = { [weak self] date in
+            self?.handleScreenPause(at: date)
+        }
+        lockMonitor.onResume = { [weak self] date in
+            self?.handleScreenResume(at: date)
+        }
+        terminationObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.pauseForApplicationExit() }
+        }
+        maintain(at: Date())
+    }
+
+    deinit {
+        automaticEndTask?.cancel()
+        if let terminationObserver {
+            NotificationCenter.default.removeObserver(terminationObserver)
+        }
     }
 
     private var ledger: OvertimeLedger { OvertimeLedger(sessions: settings.config.overtimeSessions) }
@@ -21,6 +48,7 @@ final class OvertimeController: ObservableObject {
     private func write(_ newLedger: OvertimeLedger) {
         settings.config.overtimeSessions = newLedger.sessions.sorted { $0.start < $1.start }
         active = newLedger.active
+        scheduleAutomaticEnd()
     }
 
     /// 开始一段加班（幂等）。倍率/有偿类型默认取设置，开始时刻锁税前时薪基准。
@@ -36,7 +64,10 @@ final class OvertimeController: ObservableObject {
         let r = store.start(at: at, kind: kind, multiplier: multiplier,
                             baseHourlyGross: base, currencyCode: settings.config.currencyCode)
         switch r {
-        case .success:
+        case .success(let session):
+            if lockMonitor.isPaused {
+                _ = store.pause(id: session.id, at: at)
+            }
             write(store)
             return nil
         case .failure(let e):
@@ -121,4 +152,68 @@ final class OvertimeController: ObservableObject {
     var canUndo: Bool { lastUndo != nil }
 
     private var lastUndo: OvertimeUndo?
+
+    // MARK: - 自动结束与锁屏/熄屏暂停
+
+    /// 恢复持久化的活动段时，补做已经到点的自动结束，或补记当前熄屏暂停。
+    func maintain(at now: Date) {
+        guard let session = ledger.active else {
+            scheduleAutomaticEnd()
+            return
+        }
+        let deadline = OvertimeSession.automaticEnd(after: session.start, calendar: .current)
+        if now >= deadline {
+            var store = ledger
+            _ = store.stop(id: session.id, at: deadline)
+            write(store)
+            return
+        }
+        var store = ledger
+        var changed = false
+        if lockMonitor.isPaused, session.pauses.last?.end == nil {
+            _ = store.pause(id: session.id, at: min(now, deadline))
+            changed = true
+        } else if !lockMonitor.isPaused, session.pauses.last?.end == nil {
+            _ = store.resume(id: session.id, at: now)
+            changed = true
+        }
+        if changed {
+            write(store)
+        } else {
+            scheduleAutomaticEnd()
+        }
+    }
+
+    private func handleScreenPause(at date: Date) {
+        maintain(at: date)
+    }
+
+    private func handleScreenResume(at date: Date) {
+        guard let session = ledger.active else { return }
+        var store = ledger
+        _ = store.resume(id: session.id, at: date)
+        write(store)
+    }
+
+    /// 正常退出应用时把活动段标记为暂停；下次启动若已解锁/亮屏，从启动时刻继续。
+    private func pauseForApplicationExit() {
+        guard let session = ledger.active else { return }
+        var store = ledger
+        _ = store.pause(id: session.id, at: Date())
+        write(store)
+    }
+
+    private func scheduleAutomaticEnd() {
+        automaticEndTask?.cancel()
+        automaticEndTask = nil
+        guard let session = active else { return }
+
+        let deadline = OvertimeSession.automaticEnd(after: session.start, calendar: .current)
+        let delay = max(deadline.timeIntervalSinceNow, 0.1)
+        automaticEndTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(delay))
+            guard !Task.isCancelled, let self else { return }
+            self.maintain(at: Date())
+        }
+    }
 }

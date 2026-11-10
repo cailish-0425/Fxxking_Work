@@ -38,14 +38,13 @@ struct Fxxking_WorkApp: App {
                 .environment(\.locale, Loc.locale)
                 .preferredColorScheme(settings.config.appearance.colorScheme)
                 .background(MenuBarPanelVisibility(
-                    onOpen: { privacy.revealMenuBarAmount(settings.config.menuBarDisplay) },
                     onClose: { privacy.resetForLifecycle() }
                 ))
                 .onDisappear { privacy.resetForLifecycle() }
         } label: {
             // 用独立 Observable 视图：privacy 的 @Published 变化要立刻反映到标题，
             // 而不是等 ticker 下一秒推快照才顺带更新。
-            MenuBarTitleView(config: settings.config, earnings: ticker.earnings, engine: ticker.engine, privacy: privacy)
+            MenuBarTitleView(config: settings.config, earnings: ticker.earnings, privacy: privacy)
         }
         .menuBarExtraStyle(.window)
 
@@ -69,11 +68,10 @@ struct Fxxking_WorkApp: App {
 /// `MenuBarExtra` 的 label 里直接读 `privacy.isRevealed(...)` 是不够的：label 不是
 /// `PrivacyController` 的观察者，揭示状态变了不会触发重绘，标题要等到 ticker 下一轮
 /// 每秒刷新才更新（甚至在 ticker 不推进时永远不变）。这里把 privacy 作为
-/// `@ObservedObject`，让 `revealedSurfaces` 的任何变化都直接驱动标题重建。
+/// `@ObservedObject`，让统一揭示状态的变化直接驱动标题重建。
 private struct MenuBarTitleView: View {
     let config: Configuration
     let earnings: Earnings
-    let engine: EarningsEngine
     @ObservedObject var privacy: PrivacyController
 
     var body: some View {
@@ -84,11 +82,10 @@ private struct MenuBarTitleView: View {
             isRevealed: MenuBarLabel.surface(for: config.menuBarDisplay)
                 .map { privacy.isRevealed($0) } ?? false
         )
-        let suffix = MenuBarLabel.modeSuffix(config: config, engine: engine)
         if config.showMenuBarIcon {
-            Text("\(Image(systemName: "dollarsign.circle.fill")) \(text)\(suffix)")
+            Text("\(Image(systemName: "dollarsign.circle.fill")) \(text)")
         } else {
-            Text("\(text)\(suffix)")
+            Text(text)
         }
     }
 }

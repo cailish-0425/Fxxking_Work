@@ -48,9 +48,4 @@ enum MenuBarLabel {
         return isRevealed ? raw : "••••"
     }
 
-    /// 税后口径标识：net 生效标「税后」；请求 net 但被阻塞（显示的是税前）标「税前」，避免静默回退。
-    static func modeSuffix(config: Configuration, engine: EarningsEngine) -> String {
-        guard config.payMode == .net else { return "" }
-        return engine.isNetActive ? Loc.t("menu.mode.net") : Loc.t("menu.mode.gross")
-    }
 }

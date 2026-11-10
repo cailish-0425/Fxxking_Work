@@ -18,8 +18,6 @@
 "menu.action.refresh" = "Refresh holidays";
 "menu.action.settings" = "Settings…";
 "menu.action.quit" = "Quit";
-"menu.mode.net" = " (net)";
-"menu.mode.gross" = " (gross)";
 
 /* MARK: - Work status */
 
@@ -89,6 +87,7 @@
 "schedule.section.hours" = "Hours";
 "schedule.start" = "Starts";
 "schedule.end" = "Ends";
+"schedule.invalidRange" = "End time must be later than start time; overnight shifts are not supported yet.";
 "schedule.breakToggle" = "Deduct unpaid lunch break";
 "schedule.breakStart" = "Break starts";
 "schedule.breakEnd" = "Break ends";
@@ -187,9 +186,9 @@
 /* MARK: - 隐私模式 */
 "privacy.section" = "Privacy";
 "privacy.toggle" = "Privacy mode";
-"privacy.toggle.detail" = "Hide amounts in the menu bar and panel. Click an amount to show it, click again to hide. Amounts in Settings stay visible.";
-"privacy.reveal" = "Show amount";
-"privacy.hide" = "Hide amount";
+"privacy.toggle.detail" = "Hide amounts in the menu bar and panel. Click any amount to show all amounts, then click again to hide all. Amounts in Settings stay visible.";
+"privacy.reveal" = "Show all amounts";
+"privacy.hide" = "Hide all amounts";
 "privacy.autoHide" = "Amounts auto-hide after 30 seconds.";
 
 /* MARK: - 工资历史 */
@@ -223,12 +222,10 @@
 "overtime.undo" = "Undo last change";
 "overtime.normal" = "Regular";
 "overtime.ot" = "Overtime";
-"overtime.total" = "Total";
-"overtime.breakdown.gross" = " (gross)";
-"overtime.breakdown.net" = " (net)";
-"overtime.loss" = "Unpaid overtime: lost %@";
+"overtime.total" = "Salary total (paid OT included)";
+"overtime.loss" = "Unpaid overtime reference: %@ (not deducted from salary)";
 "overtime.active" = "Tracking…";
-"overtime.hint" = "Overtime starts only when you tap start, after your scheduled end time.";
+"overtime.hint" = "Start manually after shift end. Locking or turning off the display pauses it; it ends by 2:00 AM.";
 "overtime.error.overlap" = "Overlaps regular work hours or an existing overtime record.";
 "overtime.error.endBeforeStart" = "End must be after start.";
 "overtime.error.future" = "End can't be in the future.";
@@ -250,4 +247,3 @@
 "payroll.inDays" = "%lld days";
 "payroll.period" = "Current period";
 "payroll.earned" = "Earned this period";
-"payroll.earned.net" = "Earned this period (net)";

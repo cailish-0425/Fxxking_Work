@@ -1,11 +1,17 @@
 import Foundation
 
-/// 加班段的有偿/无偿类型。有偿加入工资与税基；无偿只统计「赔了多少」，绝不进入工资/税基。
+/// 加班段的有偿/无偿类型。有偿加入工资与税基；无偿只计算展示用参考倒扣，不改变工资或税基。
 enum OvertimePayKind: String, Codable, CaseIterable, Identifiable, Sendable {
     case paid
     case unpaid
 
     var id: String { rawValue }
+}
+
+/// 加班期间屏幕锁定或显示器休眠造成的暂停区间。`end == nil` 表示当前仍暂停。
+struct OvertimePause: Codable, Equatable, Sendable {
+    var start: Date
+    var end: Date?
 }
 
 /// 一段加班记录。开始那一刻锁定当时有效的正常税前时薪、倍率与币种，
@@ -24,17 +30,102 @@ struct OvertimeSession: Codable, Equatable, Identifiable, Sendable {
     var baseHourlyGross: Double
     /// 锁定的币种快照。
     var currencyCode: String
+    /// 锁屏/熄屏期间不计入的暂停区间。
+    var pauses: [OvertimePause] = []
 
     var isActive: Bool { end == nil }
 
-    /// 已结束段的总时长（秒）；进行中段由调用方传 now 计算。
-    func elapsedSeconds(at now: Date) -> Double {
-        let stop = end ?? now
-        return max(stop.timeIntervalSince(start), 0)
+    /// 已结束段的总有效时长（秒），不含锁屏/熄屏暂停；进行中段由调用方传 now 计算。
+    func elapsedSeconds(at now: Date, calendar: Calendar = .current) -> Double {
+        activeIntervals(until: now, calendar: calendar).reduce(0) {
+            $0 + $1.end.timeIntervalSince($1.start)
+        }
+    }
+
+    /// 任意加班段最晚在开始后的下一个凌晨 2 点结束。
+    static func automaticEnd(after start: Date, calendar: Calendar) -> Date {
+        let day = calendar.startOfDay(for: start)
+        var end = calendar.date(bySettingHour: 2, minute: 0, second: 0, of: day)
+            ?? day.addingTimeInterval(2 * 3600)
+        if end <= start {
+            end = calendar.date(byAdding: .day, value: 1, to: end) ?? end.addingTimeInterval(86400)
+        }
+        return end
+    }
+
+    /// 扣除暂停区间、且不超过凌晨 2 点自动结束时刻后的有效加班区间。
+    func activeIntervals(until stop: Date, calendar: Calendar = .current) -> [DateInterval] {
+        let automaticEnd = Self.automaticEnd(after: start, calendar: calendar)
+        let effectiveEnd = min(end ?? stop, stop, automaticEnd)
+        guard effectiveEnd > start else { return [] }
+
+        var result: [DateInterval] = []
+        var cursor = start
+        for pause in pauses.sorted(by: { $0.start < $1.start }) {
+            let pauseStart = max(pause.start, start)
+            let pauseEnd = min(pause.end ?? effectiveEnd, effectiveEnd)
+            guard pauseEnd > pauseStart else { continue }
+            if pauseStart > cursor {
+                result.append(DateInterval(start: cursor, end: pauseStart))
+            }
+            cursor = max(cursor, pauseEnd)
+        }
+        if cursor < effectiveEnd {
+            result.append(DateInterval(start: cursor, end: effectiveEnd))
+        }
+        return result
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, start, end, kind, multiplier, baseHourlyGross, currencyCode, pauses
+    }
+
+    init(
+        id: UUID = UUID(),
+        start: Date,
+        end: Date?,
+        kind: OvertimePayKind,
+        multiplier: Int,
+        baseHourlyGross: Double,
+        currencyCode: String,
+        pauses: [OvertimePause] = []
+    ) {
+        self.id = id
+        self.start = start
+        self.end = end
+        self.kind = kind
+        self.multiplier = multiplier
+        self.baseHourlyGross = baseHourlyGross
+        self.currencyCode = currencyCode
+        self.pauses = pauses
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        start = try c.decode(Date.self, forKey: .start)
+        end = try c.decodeIfPresent(Date.self, forKey: .end)
+        kind = try c.decode(OvertimePayKind.self, forKey: .kind)
+        multiplier = try c.decode(Int.self, forKey: .multiplier)
+        baseHourlyGross = try c.decode(Double.self, forKey: .baseHourlyGross)
+        currencyCode = try c.decode(String.self, forKey: .currencyCode)
+        pauses = try c.decodeIfPresent([OvertimePause].self, forKey: .pauses) ?? []
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(start, forKey: .start)
+        try c.encodeIfPresent(end, forKey: .end)
+        try c.encode(kind, forKey: .kind)
+        try c.encode(multiplier, forKey: .multiplier)
+        try c.encode(baseHourlyGross, forKey: .baseHourlyGross)
+        try c.encode(currencyCode, forKey: .currencyCode)
+        try c.encode(pauses, forKey: .pauses)
     }
 }
 
-/// 加班汇总（与税基/工资口径分离）：有偿按 基准×倍率×秒，无偿按 基准×1×秒。
+/// 加班汇总：有偿按 基准×倍率×秒；无偿按 基准×1×秒仅供展示，不作为工资扣款。
 struct OvertimeSummary: Equatable {
     var dayPaid: Double = 0
     var monthPaid: Double = 0
@@ -44,7 +135,7 @@ struct OvertimeSummary: Equatable {
     var yearLoss: Double = 0
     /// 进行中的段；nil 表示当前没有正在计的加班。
     var active: OvertimeSession?
-    /// 进行中段的实时金额（有偿 = 加班工资毛额；无偿 = 损失）。
+    /// 进行中段的实时金额（有偿 = 加班工资毛额；无偿 = 展示用参考倒扣）。
     var activeAmount: Double = 0
     /// 进行中段的实时秒数（已剪掉正常计薪时段，逐秒一致）。
     var activeSeconds: Double = 0
@@ -105,13 +196,50 @@ struct OvertimeLedger {
         return .success(session)
     }
 
-    /// 结束：幂等；end <= start（时间回拨）拒绝，不产生负/重复记录。
+    /// 结束：幂等；end <= start（时间回拨）拒绝，不产生负/重复记录；最晚截到凌晨 2 点。
     mutating func stop(id: UUID, at: Date) -> Result<OvertimeSession, OvertimeLedgerError> {
         guard let index = sessions.firstIndex(where: { $0.id == id }), sessions[index].isActive else {
             return .failure(.notActive)
         }
-        guard at > sessions[index].start else { return .failure(.endBeforeStart) }
-        sessions[index].end = at
+        let automaticEnd = OvertimeSession.automaticEnd(after: sessions[index].start, calendar: .current)
+        let stop = min(at, automaticEnd)
+        guard stop > sessions[index].start else { return .failure(.endBeforeStart) }
+        if let pauseIndex = sessions[index].pauses.lastIndex(where: { $0.end == nil }) {
+            sessions[index].pauses[pauseIndex].end = stop
+        }
+        sessions[index].end = stop
+        return .success(sessions[index])
+    }
+
+    /// 锁屏/熄屏开始：关闭后的有效时长不再累计；重复暂停是幂等操作。
+    mutating func pause(id: UUID, at: Date) -> Result<OvertimeSession, OvertimeLedgerError> {
+        guard let index = sessions.firstIndex(where: { $0.id == id }), sessions[index].isActive else {
+            return .failure(.notActive)
+        }
+        let automaticEnd = OvertimeSession.automaticEnd(after: sessions[index].start, calendar: .current)
+        guard at < automaticEnd else { return .failure(.notActive) }
+        if sessions[index].pauses.last?.end == nil {
+            return .success(sessions[index])
+        }
+        sessions[index].pauses.append(OvertimePause(start: max(at, sessions[index].start), end: nil))
+        return .success(sessions[index])
+    }
+
+    /// 解锁/亮屏：关闭当前暂停区间，后续时间继续累计；没有开放暂停时幂等返回。
+    mutating func resume(id: UUID, at: Date) -> Result<OvertimeSession, OvertimeLedgerError> {
+        guard let index = sessions.firstIndex(where: { $0.id == id }), sessions[index].isActive else {
+            return .failure(.notActive)
+        }
+        guard let pauseIndex = sessions[index].pauses.lastIndex(where: { $0.end == nil }) else {
+            return .success(sessions[index])
+        }
+        let automaticEnd = OvertimeSession.automaticEnd(after: sessions[index].start, calendar: .current)
+        if at >= automaticEnd {
+            sessions[index].pauses[pauseIndex].end = automaticEnd
+            sessions[index].end = automaticEnd
+            return .success(sessions[index])
+        }
+        sessions[index].pauses[pauseIndex].end = max(at, sessions[index].pauses[pauseIndex].start)
         return .success(sessions[index])
     }
 
@@ -125,6 +253,7 @@ struct OvertimeLedger {
         workCalendar: WorkCalendar,
         calendar: Calendar
     ) -> Result<OvertimeSession, OvertimeLedgerError> {
+        let session = Self.cappedToAutomaticEnd(session, calendar: calendar)
         if let error = Self.validate(
             session, now: now, config: config, workCalendar: workCalendar, calendar: calendar) {
             return .failure(error)
@@ -143,6 +272,7 @@ struct OvertimeLedger {
     ) -> Result<OvertimeSession, OvertimeLedgerError> {
         guard let index = sessions.firstIndex(where: { $0.id == id }) else { return .failure(.missing) }
         let old = sessions[index]
+        let newSession = Self.cappedToAutomaticEnd(newSession, calendar: calendar)
         if let error = Self.validate(
             newSession, now: now, config: config, workCalendar: workCalendar, calendar: calendar) {
             return .failure(error)
@@ -194,7 +324,8 @@ struct OvertimeLedger {
         calendar: Calendar,
         excluding: UUID? = nil
     ) -> OvertimeLedgerError? {
-        let end = session.end ?? now
+        let automaticEnd = OvertimeSession.automaticEnd(after: session.start, calendar: calendar)
+        let end = min(session.end ?? now, automaticEnd)
         guard end > session.start else { return .endBeforeStart }
         guard end <= now else { return .futureEnd }
         // 落在工作日正常计薪时段内 → 与正常工资重复计薪，拒绝。
@@ -212,6 +343,16 @@ struct OvertimeLedger {
             day = next
         }
         return nil
+    }
+
+    private static func cappedToAutomaticEnd(
+        _ session: OvertimeSession,
+        calendar: Calendar
+    ) -> OvertimeSession {
+        guard let end = session.end else { return session }
+        var result = session
+        result.end = min(end, OvertimeSession.automaticEnd(after: session.start, calendar: calendar))
+        return result
     }
 
     /// 补录/纠错是否与「既有加班段」重叠（排除某 id）。
@@ -259,28 +400,62 @@ struct OvertimeLedger {
         return calendar.date(bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: day)
     }
 
-    /// 跨午夜按发生日拆分；工作日剪掉正常计薪时段（上班/午休），休息日/假日整段计入（用户显式开启）。
+    /// 跨午夜按发生日拆分；先扣除锁屏/熄屏暂停，再剪掉正常计薪时段（上班/午休）。
     /// 进行中的段在开始后的下一个正常排班开始处截断，避免把次日的正常上班时段误计为加班（双算）。
     func segments(
         at now: Date, config: Configuration, workCalendar: WorkCalendar, calendar: Calendar
     ) -> [OvertimeLedger.DaySegment] {
         var result: [OvertimeLedger.DaySegment] = []
         for session in sessions {
-            var stop = session.end ?? now
+            let stop = session.end ?? now
             if session.isActive {
-                stop = Self.truncatedEnd(for: session, now: now, config: config, workCalendar: workCalendar, calendar: calendar)
-            }
-            guard stop > session.start else { continue }
-            var day = calendar.startOfDay(for: session.start)
-            while day < stop {
-                let dayEnd = calendar.date(byAdding: .day, value: 1, to: day) ?? stop
-                let from = max(session.start, day)
-                let to = min(stop, dayEnd)
-                var seconds = to.timeIntervalSince(from)
-                if workCalendar.isWorkday(day) {
-                    seconds = Self.overtimeSeconds(on: day, between: from, and: to, config: config, calendar: calendar)
+                let activeStop = Self.truncatedEnd(
+                    for: session, now: now, config: config,
+                    workCalendar: workCalendar, calendar: calendar)
+                for interval in session.activeIntervals(until: activeStop, calendar: calendar) {
+                    result.append(contentsOf: split(
+                        session: session,
+                        interval: interval,
+                        config: config,
+                        workCalendar: workCalendar,
+                        calendar: calendar
+                    ))
                 }
-                guard seconds > 0 else { day = dayEnd; continue }
+                continue
+            }
+            for interval in session.activeIntervals(until: stop, calendar: calendar) {
+                result.append(contentsOf: split(
+                    session: session,
+                    interval: interval,
+                    config: config,
+                    workCalendar: workCalendar,
+                    calendar: calendar
+                ))
+            }
+        }
+        return result
+    }
+
+    private func split(
+        session: OvertimeSession,
+        interval: DateInterval,
+        config: Configuration,
+        workCalendar: WorkCalendar,
+        calendar: Calendar
+    ) -> [OvertimeLedger.DaySegment] {
+        var result: [OvertimeLedger.DaySegment] = []
+        var day = calendar.startOfDay(for: interval.start)
+        while day < interval.end {
+            let dayEnd = calendar.date(byAdding: .day, value: 1, to: day) ?? interval.end
+            let from = max(interval.start, day)
+            let to = min(interval.end, dayEnd)
+            var seconds = to.timeIntervalSince(from)
+            if workCalendar.isWorkday(day) {
+                seconds = Self.overtimeSeconds(
+                    on: day, between: from, and: to,
+                    config: config, calendar: calendar)
+            }
+            if seconds > 0 {
                 result.append(
                     OvertimeLedger.DaySegment(
                         sessionID: session.id, day: day, seconds: seconds,
@@ -288,8 +463,8 @@ struct OvertimeLedger {
                         year: calendar.component(.year, from: day),
                         kind: session.kind, multiplier: session.multiplier,
                         baseHourlyGross: session.baseHourlyGross))
-                day = dayEnd
             }
+            day = dayEnd
         }
         return result
     }
@@ -327,12 +502,12 @@ struct OvertimeLedger {
             if seg.kind == .paid {
                 let amount = hours * seg.baseHourlyGross * Double(seg.multiplier)
                 if calendar.isDate(seg.day, inSameDayAs: today) { s.dayPaid += amount }
-                if seg.month == nowMonth { s.monthPaid += amount }
+                if seg.month == nowMonth && seg.year == nowYear { s.monthPaid += amount }
                 if seg.year == nowYear { s.yearPaid += amount }
             } else {
                 let loss = hours * seg.baseHourlyGross
                 if calendar.isDate(seg.day, inSameDayAs: today) { s.dayLoss += loss }
-                if seg.month == nowMonth { s.monthLoss += loss }
+                if seg.month == nowMonth && seg.year == nowYear { s.monthLoss += loss }
                 if seg.year == nowYear { s.yearLoss += loss }
             }
         }

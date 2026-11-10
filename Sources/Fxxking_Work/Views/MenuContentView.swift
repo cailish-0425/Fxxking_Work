@@ -84,21 +84,25 @@ struct MenuContentView: View {
                 }
             }
 
-            // 本月正常/加班/合计拆列，仅实际记录加班；无偿单独计损失，不进合计。
-            // 口径与 header 同模式（net 模式拆 net，gross 拆 gross），并逐项标实际口径，不无标注混列。
+            // 本月正常/加班/合计拆列，仅实际记录加班；无偿只展示参考倒扣，不计入工资合计。
+            // 数值跟随设置中的税前/税后口径，主面板不重复展示口径标签。
             let isNet = ticker.engine.isNetActive
             let normal = isNet ? ticker.engine.monthEarnedNetRegular(at: now) : ticker.engine.monthEarnedGross(at: now)
             let overtimePaid = isNet ? ticker.engine.monthOvertimeNet(at: now) : summary.monthPaid
-            let modeSuffix = isNet ? Loc.t("overtime.breakdown.net") : Loc.t("overtime.breakdown.gross")
             if summary.monthPaid > 0 || summary.monthLoss > 0 || overtimePaid > 0 {
-                breakdownRow(Loc.t("overtime.normal") + modeSuffix, normal)
+                breakdownRow(Loc.t("overtime.normal"), normal)
                 if overtimePaid > 0 {
-                    breakdownRow(Loc.t("overtime.ot") + modeSuffix, overtimePaid)
-                    breakdownRow(Loc.t("overtime.total") + modeSuffix, normal + overtimePaid)
+                    breakdownRow(Loc.t("overtime.ot"), overtimePaid)
                 }
+                breakdownRow(Loc.t("overtime.total"), normal + overtimePaid)
                 if summary.monthLoss > 0 {
                     HStack {
-                        Text(Loc.t("overtime.loss", Formatters.currency(summary.monthLoss, code: settings.config.currencyCode)))
+                        PrivacyAmount(surface: "overtime.loss") {
+                            Loc.t(
+                                "overtime.loss",
+                                Formatters.currency(summary.monthLoss, code: settings.config.currencyCode)
+                            )
+                        }
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -253,7 +257,7 @@ struct MenuContentView: View {
                 }
                 if summary.totalGross > 0 {
                     HStack {
-                        Text(summary.netMode ? Loc.t("payroll.earned.net") : Loc.t("payroll.earned"))
+                        Text(Loc.t("payroll.earned"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Spacer(minLength: 8)

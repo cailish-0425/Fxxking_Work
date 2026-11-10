@@ -16,8 +16,6 @@
 "menu.action.refresh" = "Actualizar festivos";
 "menu.action.settings" = "Ajustes…";
 "menu.action.quit" = "Salir";
-"menu.mode.net" = " (neto)";
-"menu.mode.gross" = " (bruto)";
 
 /* MARK: - Zona de mérito */
 
@@ -89,6 +87,7 @@
 "schedule.section.hours" = "Horario";
 "schedule.start" = "Entrada";
 "schedule.end" = "Salida";
+"schedule.invalidRange" = "La hora de fin debe ser posterior al inicio; los turnos nocturnos aún no son compatibles.";
 "schedule.breakToggle" = "Descontar la comida no pagada";
 "schedule.breakStart" = "Inicio del descanso";
 "schedule.breakEnd" = "Fin del descanso";
@@ -187,9 +186,9 @@
 /* MARK: - 隐私模式 */
 "privacy.section" = "Privacidad";
 "privacy.toggle" = "Modo privacidad";
-"privacy.toggle.detail" = "Oculta los importes de la barra de menús y del panel. Toca un importe para mostrarlo y otra vez para ocultarlo. Los importes de Ajustes siguen visibles.";
-"privacy.reveal" = "Mostrar importe";
-"privacy.hide" = "Ocultar importe";
+"privacy.toggle.detail" = "Oculta los importes de la barra de menús y del panel. Toca cualquier importe para mostrar todos y vuelve a tocar para ocultarlos. Los importes de Ajustes siguen visibles.";
+"privacy.reveal" = "Mostrar todos los importes";
+"privacy.hide" = "Ocultar todos los importes";
 "privacy.autoHide" = "Los importes se ocultan a los 30 segundos.";
 
 /* MARK: - 工资历史 */
@@ -223,12 +222,10 @@
 "overtime.undo" = "Deshacer último cambio";
 "overtime.normal" = "Salario normal";
 "overtime.ot" = "Horas extra";
-"overtime.total" = "Total";
-"overtime.breakdown.gross" = " (bruto)";
-"overtime.breakdown.net" = " (neto)";
-"overtime.loss" = "Horas extra no pagadas: perdido %@";
+"overtime.total" = "Salario total (horas extra pagadas incluidas)";
+"overtime.loss" = "Horas extra no pagadas (referencia): %@ (sin descuento del salario)";
 "overtime.active" = "En curso…";
-"overtime.hint" = "Las horas extra cuentan solo tras tocar iniciar, después de tu hora de salida.";
+"overtime.hint" = "Inicia manualmente al terminar el turno. Bloquear o apagar la pantalla pausa el tiempo; termina como máximo a las 02:00.";
 "overtime.error.overlap" = "Se solapa con horas normales o un registro existente.";
 "overtime.error.endBeforeStart" = "El fin debe ser posterior al inicio.";
 "overtime.error.future" = "El fin no puede estar en el futuro.";
@@ -250,4 +247,3 @@
 "payroll.inDays" = "%lld días";
 "payroll.period" = "Período actual";
 "payroll.earned" = "Ganado este período";
-"payroll.earned.net" = "Ganado este período (neto)";

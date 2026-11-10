@@ -1,7 +1,9 @@
+import AppKit
 import CoreGraphics
 import Foundation
 
-/// 监听屏幕锁定与解锁，解锁时把这段离开的起止时刻交给上层。
+/// 监听屏幕锁定/解锁与显示器休眠/唤醒。锁屏回调继续供摸鱼战报使用；
+/// 聚合后的暂停状态供加班计时使用，锁屏和熄屏同时发生时只产生一次暂停/恢复。
 ///
 /// macOS 没有公开的锁屏事件接口，`com.apple.screenIsLocked` 和 `com.apple.screenIsUnlocked`
 /// 这两个分布式通知是长期稳定的事实标准。沙盒应用收不到分布式通知，本应用没开沙盒所以能收到。
@@ -12,17 +14,36 @@ import Foundation
 final class ScreenLockMonitor {
     /// 解锁时回调，两个参数分别是锁屏开始和结束的时刻。
     var onUnlock: ((Date, Date) -> Void)?
+    /// 进入锁屏或熄屏时回调。
+    var onPause: ((Date) -> Void)?
+    /// 锁屏结束且显示器已亮起时回调。
+    var onResume: ((Date) -> Void)?
 
     private var lockedAt: Date?
+    private var displaySleepStartedAt: Date?
+    private var pauseStartedAt: Date?
     private let center = DistributedNotificationCenter.default()
+    private let workspaceCenter = NSWorkspace.shared.notificationCenter
 
     init() {
         observe("com.apple.screenIsLocked") { [weak self] in self?.lock(at: Date()) }
         observe("com.apple.screenIsUnlocked") { [weak self] in self?.unlock(at: Date()) }
+        observeWorkspace(NSWorkspace.screensDidSleepNotification) { [weak self] in
+            self?.displaySleep(at: Date())
+        }
+        observeWorkspace(NSWorkspace.screensDidWakeNotification) { [weak self] in
+            self?.displayWake(at: Date())
+        }
 
-        // 启动时屏幕就是锁着的，说明用户还没回来。锁屏的真实时刻已经无从得知，
-        // 从现在开始算是偏保守的选择，宁可少报也不要凭空多报。
-        if Self.screenIsLocked { lock(at: Date()) }
+        // 启动时已经锁屏/熄屏，真实开始时刻无从得知；加班暂停从当前时刻起算。
+        let now = Date()
+        if Self.screenIsLocked { lockedAt = now }
+        if CGDisplayIsAsleep(CGMainDisplayID()) != 0 { displaySleepStartedAt = now }
+        if isPaused { pauseStartedAt = now }
+    }
+
+    var isPaused: Bool {
+        lockedAt != nil || displaySleepStartedAt != nil
     }
 
     /// 监听器与应用同生命周期，不做注销。
@@ -36,13 +57,44 @@ final class ScreenLockMonitor {
         // 已经在锁屏状态里就别用新时刻覆盖，否则连续两次锁定通知会把时长清零。
         guard lockedAt == nil else { return }
         lockedAt = date
+        refreshPause(at: date)
     }
 
     private func unlock(at date: Date) {
         guard let start = lockedAt else { return }
         lockedAt = nil
+        refreshPause(at: date)
         guard date > start else { return }
         onUnlock?(start, date)
+    }
+
+    private func displaySleep(at date: Date) {
+        guard displaySleepStartedAt == nil else { return }
+        displaySleepStartedAt = date
+        refreshPause(at: date)
+    }
+
+    private func displayWake(at date: Date) {
+        guard displaySleepStartedAt != nil else { return }
+        displaySleepStartedAt = nil
+        refreshPause(at: date)
+    }
+
+    private func refreshPause(at date: Date) {
+        if isPaused {
+            guard pauseStartedAt == nil else { return }
+            pauseStartedAt = date
+            onPause?(date)
+        } else if let start = pauseStartedAt {
+            pauseStartedAt = nil
+            onResume?(max(date, start))
+        }
+    }
+
+    private func observeWorkspace(_ name: Notification.Name, _ handler: @escaping @MainActor @Sendable () -> Void) {
+        _ = workspaceCenter.addObserver(forName: name, object: nil, queue: .main) { _ in
+            MainActor.assumeIsolated { handler() }
+        }
     }
 
     /// 只有锁屏时字典里才会出现 CGSSessionScreenIsLocked 这个键。

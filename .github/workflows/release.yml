@@ -36,7 +36,7 @@ jobs:
         env:
           SPARKLE_PUBLIC_ED_KEY: ${{ secrets.SPARKLE_PUBLIC_ED_KEY }}
         run: |
-          # tag 是 v1.2.3，Info.plist 里要的是 1.2.3。手动触发时没有 tag，用 0.0.0。
+          # tag 是 v1.2.4，Info.plist 里要的是 1.2.4。手动触发时没有 tag，用 0.0.0。
           VERSION="0.0.0"
           case "$GITHUB_REF" in
               refs/tags/v*) VERSION="${GITHUB_REF_NAME#v}" ;;

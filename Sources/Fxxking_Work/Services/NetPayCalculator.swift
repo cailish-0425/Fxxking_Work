@@ -224,6 +224,9 @@ enum NetPayCalculator {
         if !(1...12).contains(profile.bonusMonth) {
             result.blocked.append("13/14 薪发放月份须在 1–12 之间")
         }
+        if payMonthsPerYear > 12, profile.bonusMonth < profile.employmentStartMonth {
+            result.blocked.append("13/14 薪发放月份早于任职起月，额外薪资无法归属，请调整发放月份或任职起月")
+        }
         if profile.monthlySpecialDeduction.cents < 0 {
             result.blocked.append("专项附加扣除不能为负")
         }
@@ -345,6 +348,9 @@ enum NetPayCalculator {
         }
         if !(1...12).contains(profile.bonusMonth) {
             result.blocked.append("13/14 薪发放月份须在 1–12 之间")
+        }
+        if payMonthsPerYear > 12, profile.bonusMonth < profile.employmentStartMonth {
+            result.blocked.append("13/14 薪发放月份早于任职起月，额外薪资无法归属，请调整发放月份或任职起月")
         }
         if profile.monthlySpecialDeduction.cents < 0 {
             result.blocked.append("专项附加扣除不能为负")

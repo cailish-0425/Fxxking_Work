@@ -49,6 +49,43 @@ struct OvertimeControllerChecks {
         expect(controller.canUndo, "Delete exposes undo")
         controller.undo()
         expect(settings.config.overtimeSessions == original, "Delete undo restores exact records")
+
+        let autoSuite = "FxxkingWork.AutoEndChecks.\(UUID().uuidString)"
+        let autoDefaults = UserDefaults(suiteName: autoSuite)!
+        defer { autoDefaults.removePersistentDomain(forName: autoSuite) }
+        let currentCalendar = Calendar.current
+        let day = currentCalendar.startOfDay(for: Date())
+        let start = currentCalendar.date(byAdding: .minute, value: 30, to: day)!
+        let deadline = currentCalendar.date(bySettingHour: 2, minute: 0, second: 0, of: day)!
+        var autoConfig = Configuration()
+        autoConfig.overtimeSessions = [
+            OvertimeSession(
+                start: start,
+                end: nil,
+                kind: .paid,
+                multiplier: 1,
+                baseHourlyGross: 100,
+                currencyCode: "CNY"
+            )
+        ]
+        autoDefaults.set(try JSONEncoder().encode(autoConfig), forKey: "configuration.v1")
+        let autoSettings = SettingsStore(defaults: autoDefaults)
+        let autoController = OvertimeController(settings: autoSettings) {
+            EarningsEngine(
+                config: autoSettings.config,
+                autoHolidays: [],
+                holidayNames: [:],
+                now: start,
+                calendar: currentCalendar
+            )
+        }
+        autoController.maintain(at: deadline.addingTimeInterval(60))
+        expect(autoController.active == nil, "Active overtime auto-finishes at 2:00 AM")
+        expect(
+            autoSettings.config.overtimeSessions.first?.end == deadline,
+            "Persisted overtime end is capped at 2:00 AM"
+        )
+
         print("\(count)/\(count) controller checks passed")
     }
 }

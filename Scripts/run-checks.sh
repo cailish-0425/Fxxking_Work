@@ -31,6 +31,14 @@ swiftc -o "$OUT" "${CORE_SOURCES[@]}" "$ROOT/Checks/main.swift"
 swiftc -parse-as-library -o "$OUT-controller" "${CORE_SOURCES[@]}" \
     "$ROOT/Sources/Fxxking_Work/Models/SettingsStore.swift" \
     "$ROOT/Sources/Fxxking_Work/Models/CountryCatalog.swift" \
+    "$ROOT/Sources/Fxxking_Work/Services/ScreenLockMonitor.swift" \
     "$ROOT/Sources/Fxxking_Work/Services/OvertimeController.swift" \
     "$ROOT/Checks/OvertimeControllerChecks.swift"
 "$OUT-controller"
+
+swiftc -parse-as-library -o "$OUT-privacy" "${CORE_SOURCES[@]}" \
+    "$ROOT/Sources/Fxxking_Work/Models/SettingsStore.swift" \
+    "$ROOT/Sources/Fxxking_Work/Models/CountryCatalog.swift" \
+    "$ROOT/Sources/Fxxking_Work/Support/PrivacyController.swift" \
+    "$ROOT/Checks/PrivacyControllerChecks.swift"
+"$OUT-privacy"

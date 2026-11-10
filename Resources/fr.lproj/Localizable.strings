@@ -16,8 +16,6 @@
 "menu.action.refresh" = "Actualiser les jours fériés";
 "menu.action.settings" = "Réglages…";
 "menu.action.quit" = "Quitter";
-"menu.mode.net" = " (net)";
-"menu.mode.gross" = " (brut)";
 
 /* MARK: - Zone de mérite */
 
@@ -89,6 +87,7 @@
 "schedule.section.hours" = "Horaires";
 "schedule.start" = "Début";
 "schedule.end" = "Fin";
+"schedule.invalidRange" = "L’heure de fin doit être postérieure au début ; les horaires de nuit ne sont pas encore pris en charge.";
 "schedule.breakToggle" = "Déduire la pause déjeuner non payée";
 "schedule.breakStart" = "Début de la pause";
 "schedule.breakEnd" = "Fin de la pause";
@@ -187,9 +186,9 @@
 /* MARK: - 隐私模式 */
 "privacy.section" = "Confidentialité";
 "privacy.toggle" = "Mode confidentialité";
-"privacy.toggle.detail" = "Masque les montants de la barre des menus et du panneau. Touchez un montant pour l’afficher, encore pour le masquer. Les montants des Réglages restent visibles.";
-"privacy.reveal" = "Afficher le montant";
-"privacy.hide" = "Masquer le montant";
+"privacy.toggle.detail" = "Masque les montants de la barre des menus et du panneau. Touchez n’importe quel montant pour tout afficher, puis encore pour tout masquer. Les montants des Réglages restent visibles.";
+"privacy.reveal" = "Afficher tous les montants";
+"privacy.hide" = "Masquer tous les montants";
 "privacy.autoHide" = "Les montants se masquent après 30 secondes.";
 
 /* MARK: - 工资历史 */
@@ -223,12 +222,10 @@
 "overtime.undo" = "Annuler le dernier changement";
 "overtime.normal" = "Salaire normal";
 "overtime.ot" = "Heures sup.";
-"overtime.total" = "Total";
-"overtime.breakdown.gross" = " (brut)";
-"overtime.breakdown.net" = " (net)";
-"overtime.loss" = "Heures sup. non payées : perdu %@";
+"overtime.total" = "Salaire total (heures sup. payées incluses)";
+"overtime.loss" = "Heures sup. non payées (référence) : %@ (sans retenue sur le salaire)";
 "overtime.active" = "En cours…";
-"overtime.hint" = "Les heures sup. ne comptent qu'après un appui sur démarrer, après l'heure de fin.";
+"overtime.hint" = "Démarrez manuellement après la fin du service. Le verrouillage ou l’extinction de l’écran met le temps en pause ; il s’arrête au plus tard à 2:00.";
 "overtime.error.overlap" = "Chevauche les heures normales ou une saisie existante.";
 "overtime.error.endBeforeStart" = "La fin doit suivre le début.";
 "overtime.error.future" = "La fin ne peut pas être dans le futur.";
@@ -250,4 +247,3 @@
 "payroll.inDays" = "%lld jours";
 "payroll.period" = "Période en cours";
 "payroll.earned" = "Gagné cette période";
-"payroll.earned.net" = "Gagné cette période (net)";
