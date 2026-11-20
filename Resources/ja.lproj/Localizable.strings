@@ -1,0 +1,413 @@
+/* Fxxking Work — 日本語。
+   キーは意味ベース。英語と同じ文言でも別の訳を持てるようにしている。 */
+
+/* MARK: - メニューバーのポップオーバー */
+
+"menu.perSecond" = "1秒あたり +%@（精神的損害賠償）";
+"menu.progress.today" = "今日";
+"menu.progress.month" = "今月";
+"menu.progress.year" = "今年";
+"menu.fact.remaining" = "今日の残り";
+"menu.fact.workdays" = "今月の勤務日数";
+"menu.fact.nextHoliday" = "次の祝日";
+"menu.holiday.entry" = "%1$@ · %2$@";
+"menu.holiday.today" = "今日です";
+"menu.holidayError" = "祝日を読み込めませんでした: %@";
+"menu.unsupportedCountry" = "%@ の祝日データは自動取得できません。設定で日付を手動追加してください。";
+"menu.action.refresh" = "祝日を更新";
+"menu.action.settings" = "設定…";
+"menu.action.quit" = "終了";
+
+/* MARK: - 勤務状態 */
+
+"status.beforeWork" = "まだ始まっていません";
+"status.working" = "計測中";
+"status.onBreak" = "昼休み（無給）";
+"status.finished" = "本日の勤務終了";
+"status.dayOff.holiday" = "今日は%@";
+"status.dayOff.rest" = "休日";
+"status.dayOff.noSchedule" = "勤務時間が未設定";
+
+/* MARK: - 皮肉な一言 */
+
+"snark.dayOff" = "今日は何も稼いでいない。何も耐えてもいない。";
+"snark.beforeWork" = "メーターは停止中。自由な空気を今のうちに吸っておこう。";
+"snark.onBreak" = "昼休みは無給。この1時間は自腹。";
+"snark.finished" = "本日の分は回収済み。これ以降は寄付。";
+"snark.working.q1" = "起動直後。魂はまだ渋滞中。";
+"snark.working.q2" = "折り返し地点。賠償金が少しずつ片付いてきた。";
+"snark.working.q3" = "半分を過ぎた。今日の我慢が報われ始めている。";
+"snark.working.q4" = "ゴールが見える。お金と自由が手を振っている。";
+
+/* MARK: - 設定タブ */
+
+"settings.tab.salary" = "給与";
+"settings.tab.schedule" = "勤務時間";
+"settings.tab.holidays" = "祝日";
+"settings.tab.display" = "表示";
+"settings.tab.about" = "情報";
+
+/* MARK: - 情報タブ */
+
+"about.section.app" = "アプリ";
+"about.name" = "名前";
+"about.version" = "バージョン";
+"about.maintainer" = "管理者";
+"about.section.changes" = "更新内容";
+"about.summary" = "設定画面とバージョン情報。";
+"about.section.links" = "リンク";
+"about.github" = "GitHub";
+"about.section.updates" = "アップデート";
+"about.updater.check" = "アップデートを確認…";
+"about.updater.auto" = "自動でアップデートを確認";
+"about.updater.auto.detail" = "既定はオフ。オンにするとバックグラウンドで確認しますが、インストール前に確認があります。";
+"about.updater.unconfigured" = "アップデーター未設定: %@ が見つかりません";
+
+/* MARK: - 給与タブ */
+
+"salary.section.income" = "収入";
+"salary.amount" = "金額";
+"salary.period" = "給与期間";
+"salary.period.monthly" = "月給";
+"salary.period.annual" = "年収";
+"salary.payMonths.hint" = "年間の支払月数を入力してください。賞与は給与モードに応じて概算されます。";
+"salary.section.region" = "地域";
+"salary.country" = "国または地域";
+"salary.currency" = "通貨";
+"salary.section.derived" = "換算レート";
+"salary.workdaysThisMonth" = "今月の勤務日数";
+"salary.perDay" = "日給";
+"salary.perHour" = "時給";
+"salary.perSecond" = "秒給";
+
+/* MARK: - 勤務時間タブ */
+
+"schedule.section.weekdays" = "勤務日";
+"schedule.section.hours" = "勤務時間";
+"schedule.start" = "開始";
+"schedule.end" = "終了";
+"schedule.invalidRange" = "終了時刻は開始時刻より後にしてください。夜勤には未対応です。";
+"schedule.breakToggle" = "無給の昼休みを差し引く";
+"schedule.breakStart" = "休憩開始";
+"schedule.breakEnd" = "休憩終了";
+"schedule.paidPerDay" = "1日の有給時間";
+
+/* MARK: - 祝日タブ */
+
+"holidays.section.title" = "%@ の祝日";
+"holidays.autoToggle" = "祝日を自動で除外";
+"holidays.includeRegional" = "地域・公共部門の休日を含める";
+"holidays.autoMakeup" = "データの振替出勤日を適用";
+"holidays.refresh" = "今すぐ更新";
+"holidays.footer" = "データ提供: %@。振替出勤も同じソースから取得するため、中国・ロシア・ベトナムの週末振替はすでに対応済みです。";
+"holidays.status.idle" = "未読み込み";
+"holidays.status.loading" = "読み込み中…";
+"holidays.status.unsupported" = "この地域の自動データはありません";
+"holidays.status.failed" = "失敗: %@";
+"holidays.extra.title" = "追加の休日";
+"holidays.extra.hint" = "年休、橋渡し休日、会社の休日";
+"holidays.makeup.title" = "振替出勤日";
+"holidays.makeup.hint" = "週末の振替出勤日。休日設定より優先されます。";
+"holidays.auto.tag" = "データ提供元";
+"holidays.add" = "追加";
+
+/* MARK: - 表示タブ */
+
+"away.title" = "おかえりなさい";
+"away.body" = "%1$@ のあいだ離席していました。そのあいだに会社は %2$@ 支払いました。";
+"away.body.private" = "%1$@ のあいだ離席していました。";
+"away.dismiss" = "どこかをクリックして閉じる";
+
+"display.section.appearance" = "外観";
+"display.theme" = "テーマ";
+"appearance.system" = "システムに合わせる";
+"appearance.light" = "ライト";
+"appearance.dark" = "ダーク";
+"display.menuBar" = "メニューバーに表示";
+"display.menuBar.todayAmount" = "今日の収入";
+"display.menuBar.todayPercent" = "今日の進捗";
+"display.menuBar.monthAmount" = "今月の収入";
+"display.menuBar.monthPercent" = "今月の進捗";
+"display.menuBar.yearPercent" = "今年の進捗";
+"display.showIcon" = "アイコンを表示";
+"display.showSnark" = "皮肉な一言を表示";
+"display.awayAlert" = "離席中の収入を報告";
+"display.awayAlert.detail" = "画面ロックを解除したとき、離席中に会社が支払った金額を表示します。勤務時間外は計上されません。";
+"display.section.language" = "言語";
+"display.language" = "表示言語";
+"language.followSystem" = "システムに合わせる";
+"display.section.startup" = "起動";
+"display.launchAtLogin" = "ログイン時に開く";
+"display.launchError" = "設定を変更できませんでした: %@";
+"display.reset" = "すべての設定をリセット";
+
+/* MARK: - 祝日サービスのエラー */
+
+"error.badResponse" = "祝日サービスの応答を読み取れませんでした";
+"error.httpStatus" = "祝日サービスが HTTP %lld を返しました";
+"error.unsupportedCountry" = "この地域の自動祝日データはありません";
+
+/* MARK: - 税・手取り */
+"salary.payMode" = "給与モード";
+"salary.payMode.gross" = "総額";
+"salary.payMode.net" = "手取り";
+"salary.tax.section" = "税の設定";
+"salary.tax.region" = "参照地域";
+"salary.tax.region.custom" = "カスタム";
+"salary.tax.region.beijing" = "北京";
+"salary.tax.region.shanghai" = "上海";
+"salary.tax.region.effective" = "適用開始";
+"salary.tax.region.checked" = "確認日";
+"salary.tax.region.source" = "出典";
+"salary.tax.social" = "社会保険・住宅積立金";
+"salary.tax.pension" = "年金";
+"salary.tax.medical" = "医療";
+"salary.tax.medicalFixed" = "医療（定額）";
+"salary.tax.unemployment" = "失業保険";
+"salary.tax.housingFund" = "住宅積立金";
+"salary.tax.rate" = "率";
+"salary.tax.base" = "基数";
+"salary.tax.auto" = "自動";
+"salary.tax.disabled" = "未加入";
+"salary.tax.manual" = "手動";
+"salary.tax.special" = "特別控除";
+"salary.tax.other" = "その他の控除";
+"salary.tax.startMonth" = "開始月";
+"salary.tax.bonusMonth" = "賞与の月";
+"salary.tax.detail" = "今月";
+"salary.tax.gross" = "総額";
+"salary.tax.socialTotal" = "社会保険";
+"salary.tax.tax" = "税";
+"salary.tax.net" = "手取り";
+"salary.tax.year" = "年間見込み";
+"salary.tax.note" = "現在の設定からの概算です。追加給与は合算して課税されます。";
+"salary.tax.blocked" = "手取りを計算できません";
+"salary.tax.issue.regionUnknown" = "地域「%1$@」は参考リストにありません。カスタムパラメータで試算します。加入資格をご確認ください。";
+"salary.tax.issue.custom" = "カスタムモード：拠出基数・料率・加入資格は実際の給与明細でご確認ください。この結果は公的認定ではありません。";
+"salary.tax.blocked.manualBaseNegative" = "%1$@の手動基数はマイナスにできません。";
+"salary.tax.blocked.manualBaseBelowMin" = "%1$@の基数 %2$.2f 元は%3$@の参考下限 %4$lld 元を下回っています。この基数で試算するにはカスタム地域に切り替えてください。";
+"salary.tax.blocked.manualBaseAboveMax" = "%1$@の基数 %2$.2f 元は%3$@の参考上限 %4$lld 元を超えています。この基数で試算するにはカスタム地域に切り替えてください。";
+"salary.tax.blocked.medicalFixedNegative" = "医療保険の固定額はマイナスにできません。";
+"salary.tax.blocked.rateOutOfRange" = "%1$@の個人料率は 0～100%% の範囲で入力してください。";
+"salary.tax.blocked.housingFundRateOutOfRange" = "住宅積立金の個人料率 %1$g%% は%2$@の参考範囲 %3$g%%～%4$g%% を外れています。この料率で試算するにはカスタム地域に切り替えてください。";
+"salary.tax.blocked.notMainlandCNY" = "税引後試算は中国本土の雇用主かつ CNY の場合のみ対応しています。";
+"salary.tax.blocked.salaryNegative" = "月給はマイナスにできません。";
+"salary.tax.blocked.salaryTooLarge" = "月給が計算可能な範囲を超えています。";
+"salary.tax.blocked.startMonthOutOfRange" = "入社開始月は 1～12 の範囲で指定してください。";
+"salary.tax.blocked.bonusMonthOutOfRange" = "13/14 ヶ月分給与の支給月は 1～12 の範囲で指定してください。";
+"salary.tax.blocked.bonusBeforeStart" = "13/14 ヶ月分給与の支給月が入社開始月より前です。追加給与を割り当てできません。支給月または開始月を調整してください。";
+"salary.tax.blocked.specialDeductionNegative" = "特別追加控除はマイナスにできません。";
+"salary.tax.blocked.otherDeductionNegative" = "その他の控除はマイナスにできません。";
+"salary.tax.blocked.socialExceedsGross" = "当月の個人拠出合計 %1$.2f 元が月給の総額 %2$.2f 元を超えています。";
+"salary.tax.blocked.grossMonthCount" = "月別総額はちょうど 12 ヶ月分必要です。";
+"salary.tax.blocked.socialBaseMonthCount" = "月別社会保険基数はちょうど 12 ヶ月分必要です。";
+"salary.tax.notApplicable" = "手取り計算は中国本土（人民元）のみ対応しています。";
+
+/* MARK: - プライバシーモード */
+"privacy.section" = "プライバシー";
+"privacy.toggle" = "プライバシーモード";
+"privacy.toggle.detail" = "メニューバーとパネルの金額を隠します。金額をクリックするとすべての金額が表示され、もう一度クリックすると隠れます。設定画面の金額は表示されたままです。";
+"privacy.reveal" = "金額をすべて表示";
+"privacy.hide" = "金額をすべて隠す";
+"privacy.autoHide" = "金額は30秒後に自動で隠れます。";
+"screenCapture.blocked.title" = "画面が共有または録画されています";
+"screenCapture.blocked.detail" = "録画・ライブ配信・画面共有が終わるとパネルは自動で戻ります。";
+"screenCapture.sheetProtected" = "画面共有中です。このウィンドウの内容は非表示です";
+"screenCapture.checking" = "画面共有の状態を確認しています…";
+"screenCapture.endOvertime" = "残業を終了";
+"screenCapture.openSettings" = "設定を開く";
+"screenCapture.quit" = "終了";
+"screenCapture.unavailable.title" = "画面共有の保護が一時的に利用できません";
+"screenCapture.unavailable.detail" = "金額を守るためパネルを隠しています。再試行してください。改善しない場合はアプリを再起動してください。";
+"screenCapture.retry" = "再試行";
+
+/* MARK: - 給与の変更履歴 */
+"salary.history" = "給与の変更";
+"salary.history.add" = "変更を追加";
+"salary.history.edit" = "変更を編集";
+"salary.history.effective" = "適用日";
+"salary.history.amount" = "金額";
+"salary.history.period" = "期間";
+"salary.history.monthsShort" = "年 %lld か月";
+"salary.history.empty" = "給与の変更はありません。現在の給与が最初から適用されます。";
+"salary.history.hint" = "変更は適用日から有効です。編集・削除はその変更だけに影響します。";
+"salary.history.save" = "保存";
+"salary.history.cancel" = "キャンセル";
+"salary.history.undo" = "直前の変更を元に戻す";
+
+/* MARK: - 残業 */
+"overtime.section" = "残業";
+"overtime.start" = "残業を開始";
+"overtime.start.afterTime" = "勤務日は %@ の退勤後に開始できます。";
+"overtime.stop" = "残業を終了";
+"overtime.kind.paid" = "有給";
+"overtime.kind.unpaid" = "無給";
+"overtime.multiplier" = "倍率";
+"overtime.base" = "基準時給";
+"overtime.base.auto" = "基準時給は開始日の給与から自動入力されます。";
+"overtime.defaultKind" = "既定の残業種別";
+"overtime.history" = "残業履歴";
+"overtime.history.empty" = "残業の記録はまだありません。";
+"overtime.backfill" = "記録を追加";
+"overtime.edit" = "編集";
+"overtime.undo" = "直前の変更を元に戻す";
+"overtime.normal" = "通常";
+"overtime.ot" = "残業";
+"overtime.total" = "給与合計（有給残業を含む）";
+"overtime.loss" = "無給残業の参考値: %@（給与からは差し引かれません）";
+"overtime.active" = "計測中…";
+"overtime.hint" = "退勤後に手動で開始します。画面ロックや表示オフの間は停止し、翌2:00までに終了します。";
+"overtime.error.overlap" = "通常勤務時間または既存の残業と重なっています。";
+"overtime.error.endBeforeStart" = "終了は開始より後にしてください。";
+"overtime.error.future" = "終了時刻は未来にできません。";
+"overtime.error.alreadyActive" = "すでに残業を計測中です。";
+"overtime.error.notActive" = "計測中の残業はありません。";
+"overtime.error.missing" = "この記録はもう存在しません。";
+
+/* MARK: - 給与日と期間 */
+"payroll.section" = "給与日と期間";
+"payroll.enabled" = "給与期間をカスタム";
+"payroll.cutoffDay" = "締切日: %lld";
+"payroll.paydayDay" = "名目給与日: %lld";
+"payroll.offset" = "支払";
+"payroll.offset.sameMonth" = "当月";
+"payroll.offset.nextMonth" = "翌月";
+"payroll.reminder" = "給与日の前日に通知";
+"payroll.reminder.detail" = "名目給与日の前日20:00に通知します。実際の支払いは勤務先によります。";
+"payroll.reminder.title" = "明日は名目給与日です";
+"payroll.reminder.body" = "給与期間の設定では明日が名目給与日です。実際の支払いは勤務先によります。";
+"payroll.example" = "例: 前月26日〜当月25日、翌月10日払い。";
+"payroll.nextPayday" = "次の給与日";
+"payroll.today" = "今日";
+"payroll.inDays" = "%lld 日";
+"payroll.period" = "現在の期間";
+"payroll.earned" = "この期間の収入";
+"payroll.notes.unavailable" = "給与期間を計算できません。";
+"payroll.notes.sameMonthBeforeSettlement" = "同月の発給日が締切日より前です。雇用主の規則をご確認ください。";
+
+/* MARK: - 休暇 */
+"leave.add" = "休暇を追加";
+"leave.backfill" = "過去の休暇を追加";
+"leave.cancel" = "キャンセル";
+"leave.date" = "日付";
+"leave.delete" = "削除";
+"leave.deleted" = "休暇の記録を削除しました。";
+"leave.done" = "完了";
+"leave.edit" = "休暇を編集";
+"leave.empty" = "休暇の記録はまだありません。";
+"leave.end" = "終了日";
+"leave.error.duplicate" = "この日付にはすでに休暇の記録があります。";
+"leave.error.range" = "終了日は開始日より前にできません。";
+"leave.error.ratio" = "計給率は0%から100%の範囲で指定してください。";
+"leave.hint" = "休暇は選択した勤務日の給与だけに影響します。週末・祝日・振替出勤は祝日設定に従います。";
+"leave.history" = "休暇の記録";
+"leave.impact.preview" = "%1$@ · %2$@ 計給 · 総額 %3$@ 減";
+"leave.kind" = "休暇の種類";
+"leave.kind.personal" = "私用休暇";
+"leave.kind.sick" = "病気休暇";
+"leave.kind.annual" = "年次休暇";
+"leave.kind.compensatory" = "代休";
+"leave.kind.marriage" = "結婚休暇";
+"leave.kind.bereavement" = "服喪休暇";
+"leave.kind.maternity" = "産休";
+"leave.kind.paternity" = "育休";
+"leave.kind.other" = "その他";
+"leave.note" = "メモ";
+"leave.pay" = "給与の扱い";
+"leave.pay.custom" = "カスタム";
+"leave.pay.full" = "有給";
+"leave.pay.unpaid" = "無給";
+"leave.portion" = "期間";
+"leave.portion.afternoon" = "午後";
+"leave.portion.fullDay" = "全日";
+"leave.portion.morning" = "午前";
+"leave.range.applied" = "%1$lld 日追加、既存 %2$lld 日と非勤務日 %3$lld 日をスキップしました。";
+"leave.range.halfDayOnly" = "半日は1日だけ記録できます。";
+"leave.range.workdaysOnly" = "勤務日のみ適用";
+"leave.ratio.custom" = "カスタム率 %@";
+"leave.row.loss" = "%@ 減";
+"leave.row.noImpact" = "給与への影響なし";
+"leave.row.ratio" = "計給 %@";
+"leave.save" = "保存";
+"leave.start" = "開始日";
+"leave.summary.days" = "今年: %@ 日の休暇";
+"leave.summary.loss" = "総額の減少見込み: %@";
+"leave.summary.periods" = "%1$lld 期間にまたがり、直近は %2$@ 〜 %3$@";
+"leave.today.action" = "休暇";
+"leave.today.current" = "現在: %1$@ · %2$@ · 計給 %3$@";
+"leave.today.nonWorkday" = "今日は勤務日ではないため、休暇は給与に影響しません。";
+"leave.today.preview" = "%1$@ · %2$@ 計給 · 通常日給の %3$@ · 総額 %4$@ 減";
+"leave.today.title" = "今日の休暇";
+"leave.undo" = "元に戻す";
+"leave.undo.done" = "休暇の変更を元に戻しました。";
+"snark.onLeave" = "休暇でも時計は止まらない。";
+"status.onLeave" = "休暇中: %1$@ · %2$@";
+
+/* MARK: - 初回起動の案内 */
+"onboarding.action.back" = "戻る";
+"onboarding.action.finish" = "完了";
+"onboarding.action.next" = "次へ";
+"onboarding.action.skip" = "スキップ";
+"onboarding.error.breakRange" = "休憩は勤務時間内に収めてください。";
+"onboarding.error.salaryRequired" = "0より大きい給与を入力してください。";
+"onboarding.holidays.detail" = "祝日と振替出勤を自動で反映します。例外は後から追加できます。";
+"onboarding.payMonths" = "年間の支払回数";
+"onboarding.privacy.defaultNote" = "プライバシーは既定でオンです。後から変更できます。";
+"onboarding.step" = "ステップ %1$lld / %2$lld";
+"onboarding.step.privacy.detail" = "金額の隠し方と、勤務カレンダーでの祝日の扱いを決めます。";
+"onboarding.step.privacy.title" = "プライバシーと祝日";
+"onboarding.step.salary.detail" = "ここで決めた値が、メニューバーのすべての金額の基準になります。";
+"onboarding.step.salary.title" = "給与と給与日";
+"onboarding.step.schedule.detail" = "勤務日・シフト・無給の休憩を設定します。";
+"onboarding.step.schedule.title" = "勤務時間";
+"onboarding.step.summary.detail" = "保存前に設定を確認してください。";
+"onboarding.step.summary.title" = "確認";
+"onboarding.subtitle" = "今1分使うと、あとで設定に悩まされません。";
+"onboarding.summary.break" = "休憩 %1$@–%2$@";
+"onboarding.summary.holidays.auto" = "祝日に従う";
+"onboarding.summary.holidays.manual" = "勤務日設定のみ";
+"onboarding.summary.months" = "年 %lld 回";
+"onboarding.summary.naturalMonth" = "暦月";
+"onboarding.summary.noBreak" = "休憩なし";
+"onboarding.summary.note" = "すべて設定画面で変更できます。";
+"onboarding.summary.off" = "オフ";
+"onboarding.summary.on" = "オン";
+"onboarding.summary.payroll" = "給与期間";
+"onboarding.summary.salary" = "給与";
+"onboarding.summary.schedule" = "勤務時間";
+"onboarding.title" = "Fxxking Work の初期設定";
+"onboarding.window" = "Fxxking Work へようこそ";
+
+/* MARK: - 休暇理由メーカー */
+"leaveReason.absurd.1" = "スリッパが片方だけ行方不明です。もう片方が、私が戻って捜索を指揮するまで動かないと言っています。";
+"leaveReason.absurd.2" = "猫が通勤用の靴をソファの下に隠し、交渉にも応じません。";
+"leaveReason.absurd.3" = "洗濯機が靴下を飲み込みました。救助の指揮を取るため、現地にいます。";
+"leaveReason.absurd.4" = "今朝の目玉焼きの形が良くないので、今日は座っての作業を避けます。";
+"leaveReason.absurd.5" = "隣の工事音が「今日は外出する日ではない」と言っています。信じます。";
+"leaveReason.absurd.6" = "今朝、エレベーターに不審な目で見られました。階段を使います。家までの階段です。";
+"leaveReason.existential.1" = "月曜日に自分が発明されたのか、確認する日が必要です。";
+"leaveReason.existential.2" = "存在感の残量が少なく、充電しながらの使用はできません。";
+"leaveReason.existential.3" = "今朝、魂と体の同期が取れていません。どちらも先に出社しないでおきます。";
+"leaveReason.existential.4" = "なぜここにいるのかを考えるため休みます。こことはオフィスのことです。";
+"leaveReason.existential.5" = "生きる意味は本日休業、ドアに張り出しが出ています。";
+"leaveReason.existential.6" = "「なぜ働くのか」の期限が今日なので、直接対応します。";
+"leaveReason.glitch.1" = "体内時計が違う時間帯に降ろしてしまい、帰り道を探しています。";
+"leaveReason.glitch.2" = "睡眠モジュールが昨夜の更新に失敗し、今日はセーフモードで動いています。";
+"leaveReason.glitch.3" = "カフェインのドライバが応答しません。3回再起動しました。";
+"leaveReason.glitch.4" = "体が望まない更新を適用してしまい、家で最後まで終わらせます。";
+"leaveReason.glitch.5" = "感情のキャッシュが満杯です。消去には丸一日、割り込みなしが必要です。";
+"leaveReason.glitch.6" = "注意力モジュールは本日メンテナンス入り。人は家にいても構いません。";
+"leaveReason.time.1" = "月曜日と同じ服を着てしまいました。家に帰って別の日に着替えます。";
+"leaveReason.time.2" = "昨日から睡眠を借りていて、今日が分割の支払日です。";
+"leaveReason.time.3" = "「あとで」が早く来たので、家で受け取らなければなりません。";
+"leaveReason.time.4" = "予定表の一部が今朝崩れました。現場で片付けが必要です。";
+"leaveReason.time.5" = "持ち主のいない1時間が現れました。家で待って、取りに来るのを待ちます。";
+"leaveReason.time.6" = "来週遅れないために、今日は働かない練習をします。";
+"leaveReason.ui.again" = "もう一つ";
+"leaveReason.ui.copied" = "コピーしました";
+"leaveReason.ui.copy" = "コピー";
+"leaveReason.ui.entry" = "理由をつくる";
+"leaveReason.ui.fillNote" = "休暇メモに入れる";
+"leaveReason.ui.hint" = "遊び用です。休暇の申請は会社の正式な手続きに従ってください。";
+"leaveReason.ui.thinking" = "言い訳を探しています…";
+"leaveReason.ui.title" = "休暇理由メーカー";

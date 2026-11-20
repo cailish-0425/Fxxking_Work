@@ -1,0 +1,414 @@
+/* Fxxking Work — 한국어 번역.
+   키는 en.lproj의 의미 기반 키와 정확히 일치합니다.
+   한국어 복수형은 other 하나뿐이므로 Localizable.stringsdict에는 other만 둡니다. */
+
+/* MARK: - Menu bar popover */
+
+"menu.perSecond" = "정신적 손해로 초당 +%@";
+"menu.progress.today" = "오늘";
+"menu.progress.month" = "이번 달";
+"menu.progress.year" = "올해";
+"menu.fact.remaining" = "오늘 남음";
+"menu.fact.workdays" = "이번 달 근무일";
+"menu.fact.nextHoliday" = "다음 휴일";
+"menu.holiday.entry" = "%1$@ · %2$@";
+"menu.holiday.today" = "바로 오늘";
+"menu.holidayError" = "휴일을 불러오지 못했습니다: %@";
+"menu.unsupportedCountry" = "%@에 대한 자동 휴일 데이터가 없습니다. 설정에서 날짜를 수동으로 추가하세요.";
+"menu.action.refresh" = "휴일 새로 고침";
+"menu.action.settings" = "설정…";
+"menu.action.quit" = "종료";
+
+/* MARK: - Work status */
+
+"status.beforeWork" = "형기 시작 전";
+"status.working" = "미터 가동 중";
+"status.onBreak" = "점심 (무급)";
+"status.finished" = "형기 만료";
+"status.dayOff.holiday" = "오늘은 %@";
+"status.dayOff.rest" = "휴무";
+"status.dayOff.noSchedule" = "근무 시간 미설정";
+
+/* MARK: - Snarky remarks */
+
+"snark.dayOff" = "오늘 번 돈도 없고, 겪은 고생도 없습니다.";
+"snark.beforeWork" = "미터가 꺼져 있습니다. 자유로운 공기를 마실 수 있을 때 마시세요.";
+"snark.onBreak" = "점심은 무급입니다. 이 시간은 자비로 사는 셈입니다.";
+"snark.finished" = "오늘 할당량을 채웠습니다. 이 뒤로는 모두 기부입니다.";
+"snark.working.q1" = "이제 막 부팅했습니다. 영혼은 아직 차에 갇혀 있습니다.";
+"snark.working.q2" = "거의 절반 왔습니다. 손해가 서서히 줄어드는 중입니다.";
+"snark.working.q3" = "중간을 지났습니다. 오늘의 인내가 결실을 보기 시작합니다.";
+"snark.working.q4" = "막바지입니다. 돈과 자유가 모두 손짓하고 있습니다.";
+
+/* MARK: - Settings tabs */
+
+"settings.tab.salary" = "급여";
+"settings.tab.schedule" = "근무 시간";
+"settings.tab.holidays" = "휴일";
+"settings.tab.display" = "표시";
+"settings.tab.about" = "정보";
+
+/* MARK: - About tab */
+
+"about.section.app" = "앱";
+"about.name" = "이름";
+"about.version" = "버전";
+"about.maintainer" = "관리자";
+"about.section.changes" = "새로운 기능";
+"about.summary" = "설정 페이지와 버전 정보입니다.";
+"about.section.links" = "링크";
+"about.github" = "GitHub";
+"about.section.updates" = "업데이트";
+"about.updater.check" = "업데이트 확인…";
+"about.updater.auto" = "업데이트 자동 확인";
+"about.updater.auto.detail" = "기본값은 꺼짐입니다. 켜면 앱이 백그라운드에서 확인하지만 설치 전에는 여전히 확인을 요청합니다.";
+"about.updater.unconfigured" = "업데이터가 설정되지 않음: %@ 누락";
+
+/* MARK: - Pay tab */
+
+"salary.section.income" = "소득";
+"salary.amount" = "금액";
+"salary.period" = "급여 기간";
+"salary.period.monthly" = "월급";
+"salary.period.annual" = "연봉";
+"salary.payMonths.hint" = "연간 지급 개월 수를 입력하세요. 추가 급여는 급여 방식에 따라 추정됩니다.";
+"salary.section.region" = "지역";
+"salary.country" = "국가 또는 지역";
+"salary.currency" = "통화";
+"salary.section.derived" = "산출 단가";
+"salary.workdaysThisMonth" = "이번 달 근무일";
+"salary.perDay" = "일당";
+"salary.perHour" = "시급";
+"salary.perSecond" = "초당";
+
+/* MARK: - Hours tab */
+
+"schedule.section.weekdays" = "근무 요일";
+"schedule.section.hours" = "근무 시간";
+"schedule.start" = "시작";
+"schedule.end" = "종료";
+"schedule.invalidRange" = "종료 시간은 시작 시간보다 늦어야 합니다. 자정을 넘기는 근무는 아직 지원하지 않습니다.";
+"schedule.breakToggle" = "무급 점심 시간 공제";
+"schedule.breakStart" = "휴게 시작";
+"schedule.breakEnd" = "휴게 종료";
+"schedule.paidPerDay" = "하루 유급 시간";
+
+/* MARK: - Holidays tab */
+
+"holidays.section.title" = "%@ 공휴일";
+"holidays.autoToggle" = "공휴일 자동 제외";
+"holidays.includeRegional" = "지역 및 공공 부문 휴일 포함";
+"holidays.autoMakeup" = "데이터 소스의 대체 근무일 적용";
+"holidays.refresh" = "지금 새로 고침";
+"holidays.footer" = "데이터 출처: %@. 대체 근무일도 같은 소스에서 가져오므로 중국, 러시아, 베트남의 대체 휴무가 이미 반영됩니다.";
+"holidays.status.idle" = "불러오지 않음";
+"holidays.status.loading" = "불러오는 중…";
+"holidays.status.unsupported" = "이 지역은 자동 데이터가 없습니다";
+"holidays.status.failed" = "실패: %@";
+"holidays.extra.title" = "추가 휴무일";
+"holidays.extra.hint" = "연차, 징검다리 휴일, 회사 휴일";
+"holidays.makeup.title" = "대체 근무일";
+"holidays.makeup.hint" = "주말 대체 근무일입니다. 휴무일보다 우선합니다.";
+"holidays.auto.tag" = "데이터 소스에서 가져옴";
+"holidays.add" = "추가";
+
+/* MARK: - Display tab */
+
+"away.title" = "다시 오신 것을 환영합니다";
+"away.body" = "%1$@ 동안 쉬었습니다. 회사는 그동안 %2$@를 지급했습니다.";
+"away.body.private" = "%1$@ 동안 쉬었습니다.";
+"away.dismiss" = "아무 곳이나 클릭하여 닫기";
+
+"display.section.appearance" = "화면 모드";
+"display.theme" = "테마";
+"appearance.system" = "시스템 따르기";
+"appearance.light" = "라이트";
+"appearance.dark" = "다크";
+"display.menuBar" = "메뉴 막대 표시";
+"display.menuBar.todayAmount" = "오늘 수입";
+"display.menuBar.todayPercent" = "오늘 진행률";
+"display.menuBar.monthAmount" = "이번 달 수입";
+"display.menuBar.monthPercent" = "이번 달 진행률";
+"display.menuBar.yearPercent" = "올해 진행률";
+"display.showIcon" = "아이콘 표시";
+"display.showSnark" = "재치 있는 문구 표시";
+"display.awayAlert" = "자리를 비운 동안 번 금액 보고";
+"display.awayAlert.detail" = "화면 잠금을 해제하면 자리를 비운 동안 회사가 지급한 금액을 표시합니다. 근무 시간 외 시간은 포함되지 않습니다.";
+"display.section.language" = "언어";
+"display.language" = "인터페이스 언어";
+"language.followSystem" = "시스템 따르기";
+"display.section.startup" = "시작";
+"display.launchAtLogin" = "로그인 시 열기";
+"display.launchError" = "설정을 변경하지 못했습니다: %@";
+"display.reset" = "모든 설정 재설정";
+
+/* MARK: - Holiday service errors */
+
+"error.badResponse" = "휴일 서비스의 응답을 읽지 못했습니다";
+"error.httpStatus" = "휴일 서비스가 HTTP %lld를 반환했습니다";
+"error.unsupportedCountry" = "이 지역은 자동 휴일 데이터가 없습니다";
+
+/* MARK: - 税后 */
+"salary.payMode" = "급여 방식";
+"salary.payMode.gross" = "세전";
+"salary.payMode.net" = "세후";
+"salary.tax.section" = "세금 설정";
+"salary.tax.region" = "기준 지역";
+"salary.tax.region.custom" = "사용자 설정";
+"salary.tax.region.beijing" = "베이징";
+"salary.tax.region.shanghai" = "상하이";
+"salary.tax.region.effective" = "적용 시작일";
+"salary.tax.region.checked" = "확인일";
+"salary.tax.region.source" = "출처";
+"salary.tax.social" = "사회보험 및 주택 기금";
+"salary.tax.pension" = "연금";
+"salary.tax.medical" = "의료보험";
+"salary.tax.medicalFixed" = "의료보험 고정액";
+"salary.tax.unemployment" = "고용보험";
+"salary.tax.housingFund" = "주택 기금";
+"salary.tax.rate" = "요율";
+"salary.tax.base" = "기준액";
+"salary.tax.auto" = "자동";
+"salary.tax.disabled" = "미납";
+"salary.tax.manual" = "수동";
+"salary.tax.special" = "특별 공제";
+"salary.tax.other" = "기타 공제";
+"salary.tax.startMonth" = "시작 월";
+"salary.tax.bonusMonth" = "상여 월";
+"salary.tax.detail" = "이번 달";
+"salary.tax.gross" = "세전";
+"salary.tax.socialTotal" = "사회보험";
+"salary.tax.tax" = "세금";
+"salary.tax.net" = "실수령액";
+"salary.tax.year" = "연간 추정";
+"salary.tax.note" = "현재 설정으로 추정한 값이며, 추가 급여도 함께 과세됩니다.";
+"salary.tax.blocked" = "실수령액 사용 불가";
+"salary.tax.issue.regionUnknown" = "%1$@ 지역은 참조 목록에 없습니다. 사용자 지정 매개변수로 추정합니다. 납부 자격을 확인하세요.";
+"salary.tax.issue.custom" = "사용자 지정 모드: 납부 기준, 요율, 자격을 실제 급여명세서로 확인하세요. 이 결과는 공식 산정이 아닙니다.";
+"salary.tax.blocked.manualBaseNegative" = "%1$@ 수동 기준액은 음수일 수 없습니다.";
+"salary.tax.blocked.manualBaseBelowMin" = "%1$@ 기준액 %2$.2f위안이 %3$@ 참조 하한 %4$lld위안보다 낮습니다. 이 기준액으로 추정하려면 사용자 지정 지역으로 전환하세요.";
+"salary.tax.blocked.manualBaseAboveMax" = "%1$@ 기준액 %2$.2f위안이 %3$@ 참조 상한 %4$lld위안을 초과합니다. 이 기준액으로 추정하려면 사용자 지정 지역으로 전환하세요.";
+"salary.tax.blocked.medicalFixedNegative" = "의료보험 고정액은 음수일 수 없습니다.";
+"salary.tax.blocked.rateOutOfRange" = "%1$@ 개인 요율은 0~100%% 범위여야 합니다.";
+"salary.tax.blocked.housingFundRateOutOfRange" = "주택적립금 개인 요율 %1$g%%가 %2$@ 참조 범위 %3$g%%~%4$g%%를 벗어났습니다. 이 요율로 추정하려면 사용자 지정 지역으로 전환하세요.";
+"salary.tax.blocked.notMainlandCNY" = "세후 계산은 중국 본토 고용주와 CNY 결제만 지원합니다.";
+"salary.tax.blocked.salaryNegative" = "월급은 음수일 수 없습니다.";
+"salary.tax.blocked.salaryTooLarge" = "월급이 계산 가능한 범위를 벗어났습니다.";
+"salary.tax.blocked.startMonthOutOfRange" = "입사 시작 월은 1~12 사이여야 합니다.";
+"salary.tax.blocked.bonusMonthOutOfRange" = "13/14번째 월 급여 지급 월은 1~12 사이여야 합니다.";
+"salary.tax.blocked.bonusBeforeStart" = "13/14번째 월 급여 지급 월이 입사 시작 월보다 앞섭니다. 추가 급여를 귀속할 수 없습니다. 지급 월이나 시작 월을 조정하세요.";
+"salary.tax.blocked.specialDeductionNegative" = "특별 추가 공제는 음수일 수 없습니다.";
+"salary.tax.blocked.otherDeductionNegative" = "기타 공제는 음수일 수 없습니다.";
+"salary.tax.blocked.socialExceedsGross" = "당월 개인 납부 합계 %1$.2f위안이 월급 총액 %2$.2f위안을 초과합니다.";
+"salary.tax.blocked.grossMonthCount" = "월별 총액은 정확히 12개월이어야 합니다.";
+"salary.tax.blocked.socialBaseMonthCount" = "월별 사회보험 기준액은 정확히 12개월이어야 합니다.";
+"salary.tax.notApplicable" = "실수령액은 중국 본토(CNY)만 지원합니다.";
+
+/* MARK: - 隐私模式 */
+"privacy.section" = "개인 정보 보호";
+"privacy.toggle" = "개인 정보 보호 모드";
+"privacy.toggle.detail" = "메뉴 막대와 패널에서 금액을 숨깁니다. 아무 금액이나 클릭하면 모든 금액이 표시되고, 다시 클릭하면 모두 숨겨집니다. 설정의 금액은 계속 표시됩니다.";
+"privacy.reveal" = "모든 금액 표시";
+"privacy.hide" = "모든 금액 숨기기";
+"privacy.autoHide" = "금액은 30초 후 자동으로 숨겨집니다.";
+"screenCapture.blocked.title" = "현재 화면이 공유되거나 녹화되고 있습니다";
+"screenCapture.blocked.detail" = "녹화, 라이브 스트리밍 또는 화면 공유가 끝나면 패널이 자동으로 돌아옵니다.";
+"screenCapture.sheetProtected" = "화면 공유 중입니다. 이 윈도우의 내용이 숨겨졌습니다";
+"screenCapture.checking" = "화면 공유 상태 확인 중…";
+"screenCapture.endOvertime" = "연장 근무 종료";
+"screenCapture.openSettings" = "설정 열기";
+"screenCapture.quit" = "종료";
+"screenCapture.unavailable.title" = "화면 공유 보호를 일시적으로 사용할 수 없습니다";
+"screenCapture.unavailable.detail" = "금액을 보호하기 위해 패널이 계속 숨겨져 있습니다. 다시 시도하거나 문제가 계속되면 앱을 재시동하세요.";
+"screenCapture.retry" = "다시 시도";
+
+/* MARK: - 工资历史 */
+"salary.history" = "급여 변동";
+"salary.history.add" = "변동 추가";
+"salary.history.edit" = "변동 편집";
+"salary.history.effective" = "적용일";
+"salary.history.amount" = "금액";
+"salary.history.period" = "기간";
+"salary.history.monthsShort" = "%lld개월/년";
+"salary.history.empty" = "급여 변동 내역이 없습니다. 현재 급여가 처음부터 적용됩니다.";
+"salary.history.hint" = "변동 사항은 적용일부터 반영됩니다. 편집하거나 삭제해도 해당 변동에만 영향을 줍니다.";
+"salary.history.save" = "저장";
+"salary.history.cancel" = "취소";
+"salary.history.undo" = "마지막 변경 실행 취소";
+
+/* MARK: - 加班 */
+"overtime.section" = "연장 근무";
+"overtime.start" = "연장 근무 시작";
+"overtime.start.afterTime" = "근무일에는 %@에 근무가 끝난 후 연장 근무를 시작할 수 있습니다.";
+"overtime.stop" = "연장 근무 종료";
+"overtime.kind.paid" = "유급";
+"overtime.kind.unpaid" = "무급";
+"overtime.multiplier" = "배수";
+"overtime.base" = "기준 시급";
+"overtime.base.auto" = "기준 시급은 시작일에 적용되는 급여에서 자동으로 채워집니다.";
+"overtime.defaultKind" = "기본 연장 근무 유형";
+"overtime.history" = "연장 근무 내역";
+"overtime.history.empty" = "아직 기록된 연장 근무가 없습니다.";
+"overtime.backfill" = "기록 추가";
+"overtime.edit" = "편집";
+"overtime.undo" = "마지막 변경 실행 취소";
+"overtime.normal" = "정규 근무";
+"overtime.ot" = "연장 근무";
+"overtime.total" = "급여 합계 (유급 연장 근무 포함)";
+"overtime.loss" = "무급 연장 근무 참고: %@ (급여에서 차감되지 않음)";
+"overtime.active" = "기록 중…";
+"overtime.hint" = "근무 종료 후 수동으로 시작하세요. 잠금 또는 화면 꺼짐 시 일시 정지되며, 오전 2시까지 종료됩니다.";
+"overtime.error.overlap" = "정규 근무 시간 또는 기존 연장 근무 기록과 겹칩니다.";
+"overtime.error.endBeforeStart" = "종료 시간은 시작 시간보다 뒤여야 합니다.";
+"overtime.error.future" = "종료 시간은 미래일 수 없습니다.";
+"overtime.error.alreadyActive" = "이미 연장 근무를 기록 중입니다.";
+"overtime.error.notActive" = "기록 중인 연장 근무가 없습니다.";
+"overtime.error.missing" = "이 기록은 더 이상 존재하지 않습니다.";
+
+/* MARK: - 发薪账期 */
+"payroll.section" = "급여일 및 기간";
+"payroll.enabled" = "사용자 지정 급여 기간";
+"payroll.cutoffDay" = "기간 마감일: %lld일";
+"payroll.paydayDay" = "명목 급여일: %lld일";
+"payroll.offset" = "급여일";
+"payroll.offset.sameMonth" = "같은 달";
+"payroll.offset.nextMonth" = "다음 달";
+"payroll.reminder" = "급여일 전날 알림";
+"payroll.reminder.detail" = "명목 급여일 전날 20:00에 알려줍니다. 실제 지급은 회사 기준을 따릅니다.";
+"payroll.reminder.title" = "내일은 명목 급여일입니다";
+"payroll.reminder.body" = "급여 기간 설정에 따르면 내일이 명목 급여일입니다. 실제 지급은 회사 기준을 따릅니다.";
+"payroll.example" = "예: 지난달 26일부터 이번 달 25일까지, 다음 달 10일에 지급.";
+"payroll.nextPayday" = "다음 급여일";
+"payroll.today" = "오늘";
+"payroll.inDays" = "%lld일";
+"payroll.period" = "현재 기간";
+"payroll.earned" = "이번 기간 수입";
+"payroll.notes.unavailable" = "급여 기간을 계산할 수 없습니다.";
+"payroll.notes.sameMonthBeforeSettlement" = "같은 달 지급일이 정산일보다 앞섭니다. 고용주 규칙을 확인하세요.";
+
+/* MARK: - Leave */
+"leave.add" = "휴가 추가";
+"leave.backfill" = "지난 휴가 추가";
+"leave.cancel" = "취소";
+"leave.date" = "날짜";
+"leave.delete" = "삭제";
+"leave.deleted" = "휴가 기록이 삭제되었습니다.";
+"leave.done" = "완료";
+"leave.edit" = "휴가 편집";
+"leave.empty" = "아직 기록된 휴가가 없습니다.";
+"leave.end" = "종료일";
+"leave.error.duplicate" = "이 날짜에는 이미 휴가 기록이 있습니다.";
+"leave.error.range" = "종료일은 시작일보다 앞설 수 없습니다.";
+"leave.error.ratio" = "급여 비율은 0%에서 100% 사이여야 합니다.";
+"leave.hint" = "휴가는 선택한 근무일에만 급여에 영향을 줍니다. 주말, 공휴일, 대체 근무일은 휴일 설정을 따릅니다.";
+"leave.history" = "휴가 기록";
+"leave.impact.preview" = "%1$@ · %2$@ 지급 · 세전 급여 %3$@ 차감";
+"leave.kind" = "휴가 유형";
+"leave.kind.personal" = "개인 휴가";
+"leave.kind.sick" = "병가";
+"leave.kind.annual" = "연차";
+"leave.kind.compensatory" = "보상 휴가";
+"leave.kind.marriage" = "결혼 휴가";
+"leave.kind.bereavement" = "조의 휴가";
+"leave.kind.maternity" = "출산 휴가";
+"leave.kind.paternity" = "배우자 출산 휴가";
+"leave.kind.other" = "기타 휴가";
+"leave.note" = "메모";
+"leave.pay" = "급여 처리";
+"leave.pay.custom" = "사용자 설정";
+"leave.pay.full" = "유급";
+"leave.pay.unpaid" = "무급";
+"leave.portion" = "기간";
+"leave.portion.afternoon" = "오후";
+"leave.portion.fullDay" = "하루 종일";
+"leave.portion.morning" = "오전";
+"leave.range.applied" = "%1$lld개 추가, 기존 %2$lld개 및 비근무일 %3$lld개 건너뜀.";
+"leave.range.halfDayOnly" = "반차는 단일 날짜에만 기록할 수 있습니다.";
+"leave.range.workdaysOnly" = "근무일에만 적용";
+"leave.ratio.custom" = "사용자 설정 비율 %@";
+"leave.row.loss" = "급여 %@ 차감";
+"leave.row.noImpact" = "급여 영향 없음";
+"leave.row.ratio" = "%@ 지급";
+"leave.save" = "저장";
+"leave.start" = "시작일";
+"leave.summary.days" = "올해: 휴가 %@일";
+"leave.summary.loss" = "예상 세전 급여 차감: %@";
+"leave.summary.periods" = "%1$lld개 급여 기간, 최근 %2$@부터 %3$@까지";
+"leave.today.action" = "휴가";
+"leave.today.current" = "현재: %1$@ · %2$@ · %3$@ 지급";
+"leave.today.nonWorkday" = "오늘은 근무일이 아니어서 휴가가 급여에 영향을 주지 않습니다.";
+"leave.today.preview" = "%1$@ · %2$@ 지급 · 정상 급여의 %3$@ · 세전 급여 %4$@ 차감";
+"leave.today.title" = "오늘 휴가";
+"leave.undo" = "실행 취소";
+"leave.undo.done" = "휴가 변경이 취소되었습니다.";
+"snark.onLeave" = "휴가도 시계가 흐르는 것을 막지는 못합니다.";
+"status.onLeave" = "휴가 중: %1$@ · %2$@";
+
+/* MARK: - First-run onboarding */
+"onboarding.action.back" = "이전";
+"onboarding.action.finish" = "마침";
+"onboarding.action.next" = "다음";
+"onboarding.action.skip" = "건너뛰기";
+"onboarding.error.breakRange" = "휴게 시간은 근무 시간 안에 있어야 합니다.";
+"onboarding.error.salaryRequired" = "0보다 큰 급여를 입력하세요.";
+"onboarding.holidays.detail" = "자동 공휴일과 대체 근무일이 달력을 최신으로 유지합니다. 예외는 나중에 추가할 수 있습니다.";
+"onboarding.payMonths" = "연간 지급 횟수";
+"onboarding.privacy.defaultNote" = "개인 정보 보호는 기본적으로 켜져 있습니다. 나중에 변경할 수 있습니다.";
+"onboarding.step" = "%1$lld / %2$lld 단계";
+"onboarding.step.privacy.detail" = "금액을 숨기는 방법과 근무 달력이 휴일을 처리하는 방법을 선택하세요.";
+"onboarding.step.privacy.title" = "개인 정보 보호 및 휴일";
+"onboarding.step.salary.detail" = "이 값은 메뉴 막대에 표시되는 모든 금액의 기준이 됩니다.";
+"onboarding.step.salary.title" = "급여 및 급여일";
+"onboarding.step.schedule.detail" = "유급 시간 계산에 사용되는 근무 요일, 근무 시간, 무급 휴게 시간을 설정하세요.";
+"onboarding.step.schedule.title" = "근무 시간";
+"onboarding.step.summary.detail" = "저장하기 전에 설정을 확인하세요.";
+"onboarding.step.summary.title" = "준비 완료";
+"onboarding.subtitle" = "지금 1분이면 나중에 설정을 만지는 수고를 덜 수 있습니다.";
+"onboarding.summary.break" = "휴게 %1$@–%2$@";
+"onboarding.summary.holidays.auto" = "공휴일 따르기";
+"onboarding.summary.holidays.manual" = "근무일만";
+"onboarding.summary.months" = "연 %lld회 지급";
+"onboarding.summary.naturalMonth" = "자연 월";
+"onboarding.summary.noBreak" = "휴게 없음";
+"onboarding.summary.note" = "모든 항목은 설정에서 계속 편집할 수 있습니다.";
+"onboarding.summary.off" = "끔";
+"onboarding.summary.on" = "켬";
+"onboarding.summary.payroll" = "급여 기간";
+"onboarding.summary.salary" = "급여";
+"onboarding.summary.schedule" = "근무 일정";
+"onboarding.title" = "Fxxking Work 설정";
+"onboarding.window" = "Fxxking Work에 오신 것을 환영합니다";
+
+/* MARK: - Leave reason generator */
+"leaveReason.absurd.1" = "고양이가 출근용 신발을 소파 밑에 숨기고 협상을 거부했습니다.";
+"leaveReason.absurd.2" = "아침에 구운 달걀 프라이가 '오늘은 출근하지 마세요'라고 말했습니다.";
+"leaveReason.absurd.3" = "세탁기가 양말 한 짝을 삼켜서 구조 작전을 지휘해야 합니다.";
+"leaveReason.absurd.4" = "이웃의 드릴 소리가 오늘은 밖에 나가지 말라는 계시로 들렸습니다.";
+"leaveReason.absurd.5" = "엘리베이터가 아침에 저를 이상하게 쳐다봐서 집에 있는 계단으로 다니려 합니다.";
+"leaveReason.absurd.6" = "짝짝이 슬리퍼를 발견했는데 나머지 한 짝이 집에 더 있기를 원합니다.";
+"leaveReason.existential.1" = "제가 이 좌표계에 실제로 존재하는지 확인할 시간이 필요합니다.";
+"leaveReason.existential.2" = "존재감 배터리가 부족해서 충전 없이는 출근이 불가능합니다.";
+"leaveReason.existential.3" = "몸과 마음이 오늘 시차 적응에 실패했습니다.";
+"leaveReason.existential.4" = "사무실에 앉아 있는 사람이 진짜 저인지 확인하기 위해 하루가 필요합니다.";
+"leaveReason.existential.5" = "삶의 의미가 오늘 휴업이라 잠시 외출해 찾아야 합니다.";
+"leaveReason.existential.6" = "'왜 일을 하는가'라는 질문의 마감이 오늘이라 대면 처리가 필요합니다.";
+"leaveReason.glitch.1" = "생체 시계가 회사 일정과 버전 충돌을 일으켰습니다.";
+"leaveReason.glitch.2" = "수면 시스템이 밤사이 업데이트에 실패해 안전 모드로만 부팅됩니다.";
+"leaveReason.glitch.3" = "카페인 드라이버가 응답하지 않아 재부팅 중입니다.";
+"leaveReason.glitch.4" = "몸이 원치 않는 업데이트를 강제로 받아서 집에서 마저 끝내야 합니다.";
+"leaveReason.glitch.5" = "감정 캐시가 가득 차서 비우는 데 하루가 걸립니다.";
+"leaveReason.glitch.6" = "집중력 모듈이 점검 중이라 오늘은 출근할 수 없습니다.";
+"leaveReason.time.1" = "어제 빌린 잠을 오늘 할부로 갚아야 합니다.";
+"leaveReason.time.2" = "'나중에'가 예정보다 일찍 도착해서 집에서 기다려야 합니다.";
+"leaveReason.time.3" = "오늘 일정이 긴 꿈 하나에 통째로 점유당했습니다.";
+"leaveReason.time.4" = "달력의 일부가 붕괴되어 현장 정리가 필요합니다.";
+"leaveReason.time.5" = "주인이 없는 시간 한 칸이 생겨서 찾아갈 때까지 집을 지켜야 합니다.";
+"leaveReason.time.6" = "다음 주 제때 출근하려면 오늘은 일하지 않는 연습이 필요합니다.";
+"leaveReason.ui.again" = "다른 이유";
+"leaveReason.ui.copied" = "복사됨";
+"leaveReason.ui.copy" = "복사";
+"leaveReason.ui.entry" = "이유 만들어 보기";
+"leaveReason.ui.fillNote" = "휴가 메모로 사용";
+"leaveReason.ui.hint" = "재미로만 사용하세요. 실제 휴가는 회사 공식 절차를 따르세요.";
+"leaveReason.ui.thinking" = "변명 찾는 중…";
+"leaveReason.ui.title" = "휴가 사유 생성기";

@@ -22,6 +22,31 @@ SOURCE_LANGUAGE = "en"
 USAGE = re.compile(r'Loc\.t\(\s*"([^"]+)"')
 STRINGS_ENTRY = re.compile(r'^\s*"((?:[^"\\]|\\.)*)"\s*=', re.MULTILINE)
 
+# 这三个文件直接产出用户可见的动态告警/账期说明/地区名，必须走 Loc。
+# 注释里的中文不算，只盯引号里的硬编码。
+CJK_STRING_LITERAL = re.compile(r'"((?:[^"\\]|\\.)*)"')
+CJK_TEXT = re.compile("[㐀-鿿]")
+LOCALIZED_SERVICE_FILES = (
+    "Sources/Fxxking_Work/Services/NetPayCalculator.swift",
+    "Sources/Fxxking_Work/Services/PayrollCalendar.swift",
+    "Sources/Fxxking_Work/Services/TaxRules.swift",
+)
+
+
+def hardcoded_cjk_problems() -> list[str]:
+    problems: list[str] = []
+    for relative in LOCALIZED_SERVICE_FILES:
+        path = ROOT / relative
+        if not path.exists():
+            problems.append(f"审计目标不存在：{relative}")
+            continue
+        for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            for match in CJK_STRING_LITERAL.finditer(line):
+                literal = match.group(1)
+                if CJK_TEXT.search(literal):
+                    problems.append(f"{relative}:{lineno} 中文硬编码字符串 {literal[:40]!r}")
+    return problems
+
 # CLDR 要求的复数类别。漏一档不会报错，只会在某个数量区间悄悄退化成别的形式，
 # 比如俄语漏了 few 就会把「2 дня」说成「2 дней」。
 REQUIRED_PLURAL_CATEGORIES = {
@@ -30,6 +55,9 @@ REQUIRED_PLURAL_CATEGORIES = {
     "fr": {"one", "other"},
     "ru": {"one", "few", "many", "other"},
     "es": {"one", "other"},
+    # 日韩没有单复数变化，CLDR 只要求 other。
+    "ja": {"other"},
+    "ko": {"other"},
 }
 
 
@@ -125,6 +153,10 @@ def main() -> int:
         return 1
 
     failures = 0
+    for problem in hardcoded_cjk_problems():
+        failures += 1
+        print(f"FAIL  [硬编码] {problem}")
+
     source_keys = keys_defined(RESOURCES / f"{SOURCE_LANGUAGE}.lproj")
 
     for lproj in languages:

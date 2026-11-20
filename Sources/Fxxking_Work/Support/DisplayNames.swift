@@ -55,6 +55,30 @@ extension OvertimePayKind {
         }
     }
 }
+extension LeaveKind {
+    var label: String {
+        switch self {
+        case .personal: return Loc.t("leave.kind.personal")
+        case .sick: return Loc.t("leave.kind.sick")
+        case .annual: return Loc.t("leave.kind.annual")
+        case .compensatory: return Loc.t("leave.kind.compensatory")
+        case .marriage: return Loc.t("leave.kind.marriage")
+        case .bereavement: return Loc.t("leave.kind.bereavement")
+        case .maternity: return Loc.t("leave.kind.maternity")
+        case .paternity: return Loc.t("leave.kind.paternity")
+        case .other: return Loc.t("leave.kind.other")
+        }
+    }
+}
+extension LeavePortion {
+    var label: String {
+        switch self {
+        case .fullDay: return Loc.t("leave.portion.fullDay")
+        case .morning: return Loc.t("leave.portion.morning")
+        case .afternoon: return Loc.t("leave.portion.afternoon")
+        }
+    }
+}
 extension OvertimeLedgerError {
     var label: String {
         switch self {
@@ -85,6 +109,8 @@ extension WorkStatus {
         case .working: return Loc.t("status.working")
         case .onBreak: return Loc.t("status.onBreak")
         case .finished: return Loc.t("status.finished")
+        case .onLeave(let leave):
+            return Loc.t("status.onLeave", leave.kind.label, leave.portion.label)
         }
     }
 }
@@ -100,6 +126,8 @@ enum Snark {
             return Loc.t("snark.onBreak")
         case .finished:
             return Loc.t("snark.finished")
+        case .onLeave:
+            return Loc.t("snark.onLeave")
         case .working:
             switch earnings.dayFraction {
             case ..<0.25: return Loc.t("snark.working.q1")

@@ -175,6 +175,7 @@ struct OvertimeLedger {
 
     /// 工作日须等规定下班时刻；休息日/假日允许用户显式开始。
     static func canStart(at date: Date, config: Configuration, workCalendar: WorkCalendar, calendar: Calendar) -> Bool {
+        if workCalendar.leaveEntry(on: date)?.portion == .fullDay { return false }
         guard workCalendar.isWorkday(date) else { return true }
         let day = calendar.startOfDay(for: date)
         guard let end = calendar.date(byAdding: .minute, value: config.endMinutes, to: day) else { return false }
@@ -324,6 +325,7 @@ struct OvertimeLedger {
         calendar: Calendar,
         excluding: UUID? = nil
     ) -> OvertimeLedgerError? {
+        if workCalendar.leaveEntry(on: session.start)?.portion == .fullDay { return .overlap }
         let automaticEnd = OvertimeSession.automaticEnd(after: session.start, calendar: calendar)
         let end = min(session.end ?? now, automaticEnd)
         guard end > session.start else { return .endBeforeStart }

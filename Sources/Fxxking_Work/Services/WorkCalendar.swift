@@ -47,6 +47,60 @@ struct WorkCalendar {
         return false
     }
 
+    func leaveEntry(on date: Date) -> LeaveEntry? {
+        LeaveLedger(entries: config.leaveEntries).entry(on: dayKey(date))
+    }
+
+    /// 请假后的实际工作时段。全天请假返回空；上午/下午假在午休处截半。
+    func workingIntervals(on date: Date) -> [ClosedRange<Int>] {
+        guard let leave = leaveEntry(on: date), leave.portion != .fullDay else {
+            return leaveEntry(on: date)?.portion == .fullDay ? [] : config.paidIntervals
+        }
+
+        let split = halfDaySplit
+        switch leave.portion {
+        case .fullDay:
+            return []
+        case .morning:
+            return config.paidIntervals.compactMap { interval in
+                let lower = max(interval.lowerBound, split.end)
+                return lower < interval.upperBound ? lower...interval.upperBound : nil
+            }
+        case .afternoon:
+            return config.paidIntervals.compactMap { interval in
+                let upper = min(interval.upperBound, split.start)
+                return interval.lowerBound < upper ? interval.lowerBound...upper : nil
+            }
+        }
+    }
+
+    /// 当天相对正常日薪的应发比例。非工作日不调用这个值参与收入计算。
+    func payableFraction(on date: Date) -> Double {
+        leaveEntry(on: date)?.payableFraction ?? 1
+    }
+
+    func workFraction(on date: Date) -> Double {
+        1 - (leaveEntry(on: date)?.leaveFraction ?? 0)
+    }
+
+    func paidSeconds(on date: Date) -> Double {
+        workingIntervals(on: date).reduce(0) {
+            $0 + Double($1.upperBound - $1.lowerBound) * 60
+        }
+    }
+
+    private var halfDaySplit: (start: Int, end: Int) {
+        if config.breakEnabled {
+            let start = min(config.breakStartMinutes, config.breakEndMinutes)
+            let end = max(config.breakStartMinutes, config.breakEndMinutes)
+            if start > config.startMinutes, end < config.endMinutes {
+                return (start, end)
+            }
+        }
+        let midpoint = config.startMinutes + (config.endMinutes - config.startMinutes) / 2
+        return (midpoint, midpoint)
+    }
+
     /// 调休本质上是假期数据的一部分，关掉自动假期就一并不用。
     private var usesAutoMakeup: Bool {
         config.useAutoHolidays && config.useAutoMakeupWorkdays

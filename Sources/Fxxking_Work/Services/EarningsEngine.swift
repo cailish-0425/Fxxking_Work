@@ -11,6 +11,7 @@ enum DayOffReason: Equatable, Sendable {
 
 enum WorkStatus: Equatable {
     case dayOff(DayOffReason)
+    case onLeave(LeaveEntry)
     case beforeWork
     case working
     case onBreak
@@ -21,6 +22,7 @@ enum WorkStatus: Equatable {
 
 struct Earnings {
     var status: WorkStatus = .beforeWork
+    var leaveEntry: LeaveEntry?
     var perSecond: Double = 0
     var dayEarned: Double = 0
     var dayTotal: Double = 0
@@ -77,6 +79,9 @@ struct EarningsEngine {
 
     private let isWorkdayToday: Bool
     private let todayHolidayName: String?
+    private let todayLeave: LeaveEntry?
+    private let todayWorkIntervals: [ClosedRange<Int>]
+    private let todayWorkSeconds: Double
     private let monthWorkdays: Int
     private let completedWorkdays: Int
     private let monthIndex: Int
@@ -145,6 +150,11 @@ struct EarningsEngine {
 
         isWorkdayToday = workCalendar.isWorkday(now)
         todayHolidayName = workCalendar.isHoliday(now) ? holidayNames[dayKey]?.localName : nil
+        todayLeave = isWorkdayToday ? workCalendar.leaveEntry(on: now) : nil
+        todayWorkIntervals = isWorkdayToday ? workCalendar.workingIntervals(on: now) : []
+        todayWorkSeconds = todayWorkIntervals.reduce(0) {
+            $0 + Double($1.upperBound - $1.lowerBound) * 60
+        }
         monthWorkdays = workCalendar.workdaysInMonth(containing: now)
         completedWorkdays = workCalendar.completedWorkdaysThisMonth(now: now)
         monthIndex = calendar.component(.month, from: now)
@@ -380,29 +390,43 @@ struct EarningsEngine {
             let monthNetYuan = finalNet?.doubleYuan ?? baseMonthNetYuan
             let yearNetYuan = (finalMonths ?? []).reduce(Money.zero) { $0 + $1.net }.doubleYuan
 
+            // dailyNet 已按当天请假比例折算。正常工作时段仍按「该日正常净日薪」的
+            // 秒速累计；超过正常额度的 100% 计薪请假在当天开始时作为固定额度计入。
+            let dayNet = dailyNet(for: now)
+            let payableFraction = todayLeave?.payableFraction ?? 1
+            let workPerSecond = paidSecondsPerDay > 0 && payableFraction > 0
+                ? dayNet / payableFraction / paidSecondsPerDay
+                : 0
             // 正常（regular）口径：秒薪与日总额都用「仅正常」月净额，加班另按实际发生段归属。
-            result.perSecond = (monthWorkdays > 0 && paidSecondsPerDay > 0)
-                ? (baseMonthNetYuan / Double(monthWorkdays)) / paidSecondsPerDay : 0
+            result.perSecond = workPerSecond
             result.monthTotal = monthNetYuan
             result.yearTotal = yearNetYuan
             let nowMinutes = minutesSinceMidnight(now)
-            let paidElapsedMinutes = elapsedPaidMinutes(upTo: nowMinutes)
-            let paidTotalMinutes = Double(config.paidMinutesPerDay)
-            let baseDayNet = monthWorkdays > 0 ? baseMonthNetYuan / Double(monthWorkdays) : 0
+            let paidElapsedMinutes = elapsedPaidMinutes(
+                upTo: nowMinutes, intervals: todayWorkIntervals)
+            let paidTotalMinutes = todayWorkSeconds / 60
+            result.leaveEntry = todayLeave
 
             if isWorkdayToday {
-                result.dayTotal = baseDayNet
-                result.dayFraction = paidTotalMinutes > 0 ? min(paidElapsedMinutes / paidTotalMinutes, 1) : 0
-                result.dayEarned = baseDayNet * result.dayFraction
+                result.dayTotal = dayNet
+                let workProgress = paidTotalMinutes > 0
+                    ? min(paidElapsedMinutes / paidTotalMinutes, 1)
+                    : 0
+                let earnedPayableFraction = earnedPayableFraction(
+                    workProgress: workProgress, leave: todayLeave)
+                result.dayFraction = payableFraction > 0
+                    ? min(earnedPayableFraction / payableFraction, 1)
+                    : 0
+                result.dayEarned = dayNet * min(earnedPayableFraction / payableFraction, 1)
                 result.elapsedSecondsToday = paidElapsedMinutes * 60
                 result.remainingSecondsToday = max(paidTotalMinutes - paidElapsedMinutes, 0) * 60
-                result.status = status(at: nowMinutes)
+                result.status = status(at: nowMinutes, intervals: todayWorkIntervals)
             } else {
                 result.status = .dayOff(todayHolidayName.map { .holiday(name: $0) } ?? .restDay)
             }
 
             // 当月正常已赚 = 已过去工作日正常净额 + 今天正常进度（均按「仅正常」口径）。
-            let regularMonthEarned = Double(completedWorkdays) * baseDayNet + result.dayEarned
+            let regularMonthEarned = completedNetEarned(now: now) + result.dayEarned
             // 当月加班净额 = 当月最终净额 − 当月仅正常净额（已发生部分，含进行中段的逐秒增量）。
             let monthOTNet = max(monthNetYuan - baseMonthNetYuan, 0)
             result.monthEarned = regularMonthEarned + monthOTNet
@@ -419,18 +443,29 @@ struct EarningsEngine {
         result.perSecond = perSecondRate
         result.monthTotal = monthTotalGross
         result.yearTotal = yearTotalGross
+        result.leaveEntry = todayLeave
 
         let nowMinutes = minutesSinceMidnight(now)
-        let paidElapsedMinutes = elapsedPaidMinutes(upTo: nowMinutes)
-        let paidTotalMinutes = Double(config.paidMinutesPerDay)
+        let paidElapsedMinutes = elapsedPaidMinutes(
+            upTo: nowMinutes, intervals: todayWorkIntervals)
+        let paidTotalMinutes = todayWorkSeconds / 60
 
         if isWorkdayToday {
             result.dayTotal = dailyPay
-            result.dayFraction = paidTotalMinutes > 0 ? min(paidElapsedMinutes / paidTotalMinutes, 1) : 0
-            result.dayEarned = dailyPay * result.dayFraction
+            result.dayTotal *= todayLeave?.payableFraction ?? 1
+            let workProgress = paidTotalMinutes > 0
+                ? min(paidElapsedMinutes / paidTotalMinutes, 1)
+                : 0
+            let earnedPayableFraction = earnedPayableFraction(
+                workProgress: workProgress, leave: todayLeave)
+            let payableFraction = todayLeave?.payableFraction ?? 1
+            result.dayFraction = payableFraction > 0
+                ? min(earnedPayableFraction / payableFraction, 1)
+                : 0
+            result.dayEarned = dailyPay * earnedPayableFraction
             result.elapsedSecondsToday = paidElapsedMinutes * 60
             result.remainingSecondsToday = max(paidTotalMinutes - paidElapsedMinutes, 0) * 60
-            result.status = status(at: nowMinutes)
+            result.status = status(at: nowMinutes, intervals: todayWorkIntervals)
         } else {
             result.status = .dayOff(todayHolidayName.map { .holiday(name: $0) } ?? .restDay)
         }
@@ -477,33 +512,13 @@ struct EarningsEngine {
 
     /// 当月已赚正常毛额（含今天进度，税前），供加班卡拆分「正常/加班/合计」。
     func monthEarnedGross(at now: Date) -> Double {
-        let nowMinutes = minutesSinceMidnight(now)
-        let paidElapsedMinutes = elapsedPaidMinutes(upTo: nowMinutes)
-        let paidTotalMinutes = Double(config.paidMinutesPerDay)
-        let todayEarned: Double
-        if isWorkdayToday, paidTotalMinutes > 0 {
-            todayEarned = dailyPay * min(paidElapsedMinutes / paidTotalMinutes, 1)
-        } else {
-            todayEarned = 0
-        }
-        return monthEarnedGross + todayEarned
+        monthEarnedGross + grossEarnedToday(at: now)
     }
 
     /// 当月已赚「仅正常」净额（含今天进度，税后，不混加班），供 net 模式加班卡拆正常列。
     func monthEarnedNetRegular(at now: Date) -> Double {
         guard netBaseMonths != nil else { return monthEarnedGross(at: now) }
-        let baseMonthNetYuan = baseMonthNetYuan(forMonth: monthIndex)
-        let baseDayNet = monthWorkdays > 0 ? baseMonthNetYuan / Double(monthWorkdays) : 0
-        let nowMinutes = minutesSinceMidnight(now)
-        let paidElapsedMinutes = elapsedPaidMinutes(upTo: nowMinutes)
-        let paidTotalMinutes = Double(config.paidMinutesPerDay)
-        let todayEarned: Double
-        if isWorkdayToday, paidTotalMinutes > 0 {
-            todayEarned = baseDayNet * min(paidElapsedMinutes / paidTotalMinutes, 1)
-        } else {
-            todayEarned = 0
-        }
-        return Double(completedWorkdays) * baseDayNet + todayEarned
+        return completedNetEarned(now: now) + netEarnedToday(at: now)
     }
 
     /// 当月有偿加班净额（税后口径：当月最终净额 − 仅正常净额，含进行中段逐秒；gross 模式回退税前加班毛额）。
@@ -566,8 +581,9 @@ struct EarningsEngine {
         {
             let from = max(period.start, todayStart)
             let to = min(now, period.endExclusive)
-            let seconds = paidSeconds(on: todayStart, between: from, and: to)
-            result.regularGross += seconds / config.paidSecondsPerDay * dailyPay(for: todayStart)
+            result.regularGross += grossEarned(
+                on: todayStart, between: from, and: to,
+                intervals: workCalendar.workingIntervals(on: todayStart))
         }
 
         // 有偿加班/无偿损失：落在账期范围内的部分（按发生日拆），复用加班 ledger 同一分配规则。
@@ -617,18 +633,18 @@ struct EarningsEngine {
     /// 某一天在 [between, and] 范围内、且落在正常计薪时段里的净额（按计薪秒逐秒累进）。
     /// 完整过去工作日：计薪秒满额 → 该月净日薪；今天：只计已过去付薪秒 → perSecond × 秒。
     private func netPaidAmount(on day: Date, between from: Date, and to: Date) -> Double {
-        let year = calendar.component(.year, from: day)
-        guard let tables = netTables[year] else { return 0 }
-        let m = calendar.component(.month, from: day)
-        guard let net = NetPayCalculator.monthNet(tables.base, for: m) else { return 0 }
-        let count = workCalendar.workdaysInMonth(containing: day)
-        guard count > 0, config.paidSecondsPerDay > 0 else { return 0 }
-        let netDaily = net.doubleYuan / Double(count)
-
-        // 与正常计薪时段的交集秒数。
-        let seconds = paidSeconds(on: day, between: from, and: to)
-        guard seconds > 0 else { return 0 }
-        return netDaily / config.paidSecondsPerDay * seconds
+        let netDaily = dailyNet(for: day)
+        let intervals = workCalendar.workingIntervals(on: day)
+        let workSeconds = intervals.reduce(0) {
+            $0 + Double($1.upperBound - $1.lowerBound) * 60
+        }
+        let covered = paidSeconds(on: day, between: from, and: to, intervals: intervals)
+        let workProgress = workSeconds > 0 ? min(covered / workSeconds, 1) : 0
+        let leave = workCalendar.leaveEntry(on: day)
+        let earnedFraction = earnedPayableFraction(workProgress: workProgress, leave: leave)
+        let payable = leave?.payableFraction ?? 1
+        guard payable > 0 else { return 0 }
+        return netDaily * min(earnedFraction / payable, 1)
     }
 
     /// 税后：账期区间内有偿加班的净额（= 当月最终净额 − 当月仅正常净额的增量，按加班段税前毛额占比摊分）。
@@ -735,7 +751,7 @@ struct EarningsEngine {
         var cursor = calendar.startOfDay(for: interval.start)
         while cursor < interval.end {
             if workCalendar.isWorkday(cursor) {
-                sum += schedule.monthlyGross(on: cursor)
+                sum += schedule.monthlyGross(on: cursor) * payableFraction(on: cursor)
             }
             guard let next = calendar.date(byAdding: .day, value: 1, to: cursor) else { break }
             cursor = next
@@ -748,7 +764,7 @@ struct EarningsEngine {
         var total = 0.0
         var cursor = calendar.startOfDay(for: interval.start)
         while cursor < interval.end {
-            if workCalendar.isWorkday(cursor) { total += dailyPay(for: cursor) }
+            if workCalendar.isWorkday(cursor) { total += adjustedDailyPay(for: cursor) }
             guard let next = calendar.date(byAdding: .day, value: 1, to: cursor) else { break }
             cursor = next
         }
@@ -760,7 +776,7 @@ struct EarningsEngine {
         var total = 0.0
         var cursor = calendar.startOfDay(for: interval.start)
         while cursor < today {
-            if workCalendar.isWorkday(cursor) { total += dailyPay(for: cursor) }
+            if workCalendar.isWorkday(cursor) { total += adjustedDailyPay(for: cursor) }
             guard let next = calendar.date(byAdding: .day, value: 1, to: cursor) else { break }
             cursor = next
         }
@@ -787,10 +803,15 @@ struct EarningsEngine {
         for _ in 0..<Self.maxAwayDays {
             if day >= end { break }
             if workCalendar.isWorkday(day) {
-                let seconds = paidSeconds(on: day, between: start, and: end)
+                let intervals = workCalendar.workingIntervals(on: day)
+                let workSeconds = intervals.reduce(0) {
+                    $0 + Double($1.upperBound - $1.lowerBound) * 60
+                }
+                let seconds = paidSeconds(on: day, between: start, and: end, intervals: intervals)
                 if seconds > 0 {
                     paid += seconds
-                    amount += seconds / config.paidSecondsPerDay * dailyPay(for: day)
+                    let workFraction = 1 - (workCalendar.leaveEntry(on: day)?.leaveFraction ?? 0)
+                    amount += seconds / workSeconds * dailyPay(for: day) * workFraction
                 }
             }
             guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
@@ -804,9 +825,20 @@ struct EarningsEngine {
             for _ in 0..<Self.maxAwayDays {
                 if cursor >= end { break }
                 if workCalendar.isWorkday(cursor) {
-                    let seconds = paidSeconds(on: cursor, between: start, and: end)
+                    let intervals = workCalendar.workingIntervals(on: cursor)
+                    let workSeconds = intervals.reduce(0) {
+                        $0 + Double($1.upperBound - $1.lowerBound) * 60
+                    }
+                    let seconds = paidSeconds(
+                        on: cursor, between: start, and: end, intervals: intervals)
                     if seconds > 0 {
-                        netAmount += seconds / config.paidSecondsPerDay * dailyNet(for: cursor)
+                        let leave = workCalendar.leaveEntry(on: cursor)
+                        let payable = leave?.payableFraction ?? 1
+                        let workFraction = 1 - (leave?.leaveFraction ?? 0)
+                        if payable > 0, workSeconds > 0 {
+                            netAmount += seconds / workSeconds
+                                * dailyNet(for: cursor) * workFraction / payable
+                        }
                     }
                 }
                 guard let next = calendar.date(byAdding: .day, value: 1, to: cursor) else { break }
@@ -819,8 +851,13 @@ struct EarningsEngine {
     }
 
     /// 某一天的计薪时段和 [start, end) 相交了多少秒。
-    private func paidSeconds(on day: Date, between start: Date, and end: Date) -> Double {
-        config.paidIntervals.reduce(0) { total, interval in
+    private func paidSeconds(
+        on day: Date,
+        between start: Date,
+        and end: Date,
+        intervals: [ClosedRange<Int>]? = nil
+    ) -> Double {
+        (intervals ?? workCalendar.workingIntervals(on: day)).reduce(0) { total, interval in
             guard let lower = date(on: day, minutesFromMidnight: interval.lowerBound),
                 let upper = date(on: day, minutesFromMidnight: interval.upperBound)
             else { return total }
@@ -836,6 +873,78 @@ struct EarningsEngine {
         return count > 0 ? schedule.monthlyGross(on: day) / Double(count) : 0
     }
 
+    private func payableFraction(on day: Date) -> Double {
+        workCalendar.payableFraction(on: day)
+    }
+
+    private func adjustedDailyPay(for day: Date) -> Double {
+        dailyPay(for: day) * payableFraction(on: day)
+    }
+
+    private func earnedPayableFraction(
+        workProgress: Double,
+        leave: LeaveEntry? = nil
+    ) -> Double {
+        let leaveFraction = leave?.leaveFraction ?? 0
+        let workFraction = 1 - leaveFraction
+        return leaveFraction * (leave?.payRatio ?? 0)
+            + workFraction * min(max(workProgress, 0), 1)
+    }
+
+    private func grossEarnedToday(at now: Date) -> Double {
+        guard isWorkdayToday else { return 0 }
+        let minutes = minutesSinceMidnight(now)
+        let elapsed = elapsedPaidMinutes(upTo: minutes, intervals: todayWorkIntervals)
+        let totalMinutes = todayWorkSeconds / 60
+        let workProgress = totalMinutes > 0 ? min(elapsed / totalMinutes, 1) : 0
+        return dailyPay * earnedPayableFraction(workProgress: workProgress, leave: todayLeave)
+    }
+
+    private func netEarnedToday(at now: Date) -> Double {
+        guard isWorkdayToday else { return 0 }
+        let dayNet = dailyNet(for: now)
+        let payable = todayLeave?.payableFraction ?? 1
+        guard payable > 0 else { return 0 }
+        let minutes = minutesSinceMidnight(now)
+        let elapsed = elapsedPaidMinutes(upTo: minutes, intervals: todayWorkIntervals)
+        let totalMinutes = todayWorkSeconds / 60
+        let workProgress = totalMinutes > 0 ? min(elapsed / totalMinutes, 1) : 0
+        let earned = earnedPayableFraction(workProgress: workProgress, leave: todayLeave)
+        return dayNet * min(earned / payable, 1)
+    }
+
+    private func completedNetEarned(now: Date) -> Double {
+        guard let monthStart = calendar.dateInterval(of: .month, for: now)?.start else { return 0 }
+        let today = calendar.startOfDay(for: now)
+        var cursor = calendar.startOfDay(for: monthStart)
+        var total = 0.0
+        while cursor < today {
+            if workCalendar.isWorkday(cursor) {
+                total += dailyNet(for: cursor)
+            }
+            guard let next = calendar.date(byAdding: .day, value: 1, to: cursor) else { break }
+            cursor = next
+        }
+        return total
+    }
+
+    private func grossEarned(
+        on day: Date,
+        between from: Date,
+        and to: Date,
+        intervals: [ClosedRange<Int>]
+    ) -> Double {
+        let totalSeconds = intervals.reduce(0) {
+            $0 + Double($1.upperBound - $1.lowerBound) * 60
+        }
+        let covered = paidSeconds(on: day, between: from, and: to, intervals: intervals)
+        let workProgress = totalSeconds > 0 ? min(covered / totalSeconds, 1) : 0
+        return dailyPay(for: day) * earnedPayableFraction(
+            workProgress: workProgress,
+            leave: workCalendar.leaveEntry(on: day)
+        )
+    }
+
     /// 税后模式的某日净日薪：按那一天所在月的「仅正常」净额折算，跨月各按当月净额；加班不摊进正常计薪。
     private func dailyNet(for day: Date) -> Double {
         let year = calendar.component(.year, from: day)
@@ -843,7 +952,12 @@ struct EarningsEngine {
         let m = calendar.component(.month, from: day)
         guard let net = NetPayCalculator.monthNet(tables.base, for: m) else { return 0 }
         let count = workCalendar.workdaysInMonth(containing: day)
-        return count > 0 ? net.doubleYuan / Double(count) : 0
+        guard count > 0, (1...12).contains(m),
+              m - 1 < tables.regularGrossPerMonth.count
+        else { return 0 }
+        let monthGross = tables.regularGrossPerMonth[m - 1].doubleYuan
+        guard monthGross > 0 else { return 0 }
+        return net.doubleYuan * adjustedDailyPay(for: day) / monthGross
     }
 
     /// 用挂钟时间而不是给零点加秒数，这样夏令时切换那天的上下班时间仍然对得上。
@@ -865,23 +979,44 @@ struct EarningsEngine {
         return hour * 60 + minute + (second + nanos) / 60
     }
 
-    private func elapsedPaidMinutes(upTo nowMinutes: Double) -> Double {
-        config.paidIntervals.reduce(0) { total, interval in
+    private func elapsedPaidMinutes(
+        upTo nowMinutes: Double,
+        intervals: [ClosedRange<Int>]
+    ) -> Double {
+        intervals.reduce(0) { total, interval in
             let lower = Double(interval.lowerBound)
             let upper = Double(interval.upperBound)
             return total + max(0, min(nowMinutes, upper) - lower)
         }
     }
 
-    private func status(at nowMinutes: Double) -> WorkStatus {
-        guard let first = config.paidIntervals.first, let last = config.paidIntervals.last else {
+    private func status(
+        at nowMinutes: Double,
+        intervals: [ClosedRange<Int>]
+    ) -> WorkStatus {
+        if let todayLeave, todayLeave.portion == .fullDay {
+            return .onLeave(todayLeave)
+        }
+        guard let first = intervals.first, let last = intervals.last else {
+            if let todayLeave { return .onLeave(todayLeave) }
             return .dayOff(.noSchedule)
         }
-        if nowMinutes < Double(first.lowerBound) { return .beforeWork }
-        if nowMinutes >= Double(last.upperBound) { return .finished }
-        let insidePaid = config.paidIntervals.contains { interval in
+        if nowMinutes < Double(first.lowerBound) {
+            if let todayLeave, todayLeave.portion == .morning {
+                return .onLeave(todayLeave)
+            }
+            return .beforeWork
+        }
+        if nowMinutes >= Double(last.upperBound) {
+            return .finished
+        }
+        let insidePaid = intervals.contains { interval in
             nowMinutes >= Double(interval.lowerBound) && nowMinutes < Double(interval.upperBound)
         }
-        return insidePaid ? .working : .onBreak
+        if insidePaid { return .working }
+        if let todayLeave, todayLeave.portion == .afternoon {
+            return .onLeave(todayLeave)
+        }
+        return .onBreak
     }
 }

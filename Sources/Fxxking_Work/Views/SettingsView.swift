@@ -2,21 +2,31 @@ import ServiceManagement
 import SwiftUI
 
 struct SettingsView: View {
+    /// 页签选择放在保护层外的 `SettingsUIState` 里：屏幕采集把内容换掉再换回来时，
+    /// 不会把用户弹回第一个页签。
+    @EnvironmentObject private var ui: SettingsUIState
+
     var body: some View {
         VStack(spacing: 0) {
-            TabView {
+            TabView(selection: $ui.selectedTab) {
                 SalaryTab()
                     .tabItem { Label(Loc.t("settings.tab.salary"), systemImage: "creditcard") }
+                    .tag(SettingsUIState.Tab.salary)
                 ScheduleTab()
                     .tabItem { Label(Loc.t("settings.tab.schedule"), systemImage: "clock") }
+                    .tag(SettingsUIState.Tab.schedule)
                 HolidayTab()
                     .tabItem { Label(Loc.t("settings.tab.holidays"), systemImage: "calendar") }
+                    .tag(SettingsUIState.Tab.holidays)
                 DisplayTab()
                     .tabItem { Label(Loc.t("settings.tab.display"), systemImage: "menubar.rectangle") }
+                    .tag(SettingsUIState.Tab.display)
                 TaxTab()
                     .tabItem { Label(Loc.t("salary.tax.section"), systemImage: "percent") }
+                    .tag(SettingsUIState.Tab.tax)
                 AboutTab()
                     .tabItem { Label(Loc.t("settings.tab.about"), systemImage: "info.circle") }
+                    .tag(SettingsUIState.Tab.about)
             }
 
             Divider()
@@ -119,9 +129,12 @@ private struct SalaryTab: View {
     @EnvironmentObject private var settings: SettingsStore
     @EnvironmentObject private var ticker: EarningsTicker
     @EnvironmentObject private var privacy: PrivacyController
+    @EnvironmentObject private var screenCapture: ScreenCaptureMonitor
+    /// 弹窗（工资变更、加班历史、加班调整）里未保存的输入都在这里，保护打断不丢。
+    @EnvironmentObject private var drafts: EditingDraftStore
 
-    @State private var showingEditor = false
-    @State private var editingVersion: SalaryVersion?
+    /// 工资变更编辑器页签与草稿走保护层外的状态对象，短采集不会丢未保存的金额。
+    @EnvironmentObject private var ui: SettingsUIState
     @State private var undo: SalaryHistoryUndo?
     @State private var showingOvertimeHistory = false
     /// 低频分组默认收起，主屏只留金额、模式、地区与换算结果。
@@ -206,26 +219,44 @@ private struct SalaryTab: View {
                 settings.config.currencyCode = currency
             }
         }
-        .sheet(isPresented: $showingEditor) {
-            SalaryVersionEditor(
-                version: editingVersion,
-                currencyCode: settings.config.currencyCode,
-                onCancel: { showingEditor = false },
-                onSave: { newVersion in
-                    applyEdit(newVersion)
-                    showingEditor = false
-                }
-            )
-            .environmentObject(settings)
-            .environmentObject(privacy)
+        // `salaryEditor`（草稿）与 `salaryEditorVisible`（呈现位）分开：
+        // 保护层把本视图换掉时 SwiftUI 只会把呈现位写回 false，草稿仍留在
+        // `SettingsUIState` 里，保护结束后按原样重新弹出。
+        .sheet(isPresented: Binding(
+            get: { ui.salaryEditorVisible && ui.salaryEditor != nil },
+            set: { ui.salaryEditorVisible = $0 }
+        )) {
+            // 工资变更弹窗里全是金额：保护期间整块换成无操作占位，一个数字都不留。
+            ScreenCaptureGate(showsSettingsButton: false, contentWidth: 340, placeholderStyle: .modal) {
+                SalaryVersionEditor(
+                    draft: Binding(
+                        get: { ui.salaryEditor ?? SettingsUIState.SalaryEditorDraft() },
+                        set: { ui.salaryEditor = $0 }
+                    ),
+                    currencyCode: settings.config.currencyCode,
+                    onCancel: { ui.closeSalaryEditor() },
+                    onSave: { newVersion in
+                        applyEdit(newVersion)
+                        ui.closeSalaryEditor()
+                    }
+                )
+                .environmentObject(settings)
+                .environmentObject(privacy)
+            }
+            .environmentObject(screenCapture)
         }
         .sheet(isPresented: $showingOvertimeHistory) {
-            OvertimeHistoryView()
-                .environmentObject(settings)
-                .environmentObject(ticker)
-                .environmentObject(privacy)
-                .environmentObject(overtimeController)
+            // 加班台账含时长与金额，保护期间同样整块换成无操作占位。
+            ScreenCaptureGate(showsSettingsButton: false, placeholderStyle: .modal) {
+                OvertimeHistoryView()
+                    .environmentObject(settings)
+                    .environmentObject(ticker)
+                    .environmentObject(privacy)
+                    .environmentObject(overtimeController)
+                    .environmentObject(drafts)
             }
+            .environmentObject(screenCapture)
+        }
     }
 
     /// 加班控制器（从环境取，主面板与设置页共用同一台账）。
@@ -244,6 +275,13 @@ private struct SalaryTab: View {
                     Text(Loc.t("payroll.offset.nextMonth")).tag(PaydayOffset.nextMonth)
                 }
                 .pickerStyle(.segmented)
+                Toggle(
+                    Loc.t("payroll.reminder"),
+                    isOn: $settings.config.payroll.reminderEnabled
+                )
+                Text(Loc.t("payroll.reminder.detail"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         } header: {
             Text(Loc.t("payroll.section"))
@@ -303,12 +341,10 @@ private struct SalaryTab: View {
         var store = historyStore
         store.undo = undo
         let error: SalaryHistoryValidationError?
-        if editingVersion == nil {
-            error = store.add(version, current: settings.config, calendar: .current)
-        } else if let id = editingVersion?.id {
-            error = store.edit(id: id, to: version, calendar: .current)
+        if let editing = ui.salaryEditor?.versionID {
+            error = store.edit(id: editing, to: version, calendar: .current)
         } else {
-            error = .missing
+            error = store.add(version, current: settings.config, calendar: .current)
         }
         if error == nil {
             settings.config.salaryHistory = store.versions
@@ -361,8 +397,7 @@ private struct SalaryTab: View {
             // 新增与撤销始终直接可见：折叠只收历史列表，不把操作入口藏起来。
             HStack {
                 Button(Loc.t("salary.history.add")) {
-                    editingVersion = nil
-                    showingEditor = true
+                    ui.openSalaryEditor(SettingsUIState.SalaryEditorDraft())
                 }
                 .buttonStyle(.link)
                 Spacer()
@@ -394,8 +429,12 @@ private struct SalaryTab: View {
                     .monospacedDigit()
             }
             Button {
-                editingVersion = version
-                showingEditor = true
+                ui.openSalaryEditor(SettingsUIState.SalaryEditorDraft(
+                    versionID: version.id,
+                    amount: version.amount,
+                    period: version.period,
+                    payMonthsPerYear: version.payMonthsPerYear,
+                    effectiveDate: DayKeyCoder.current.date(from: version.effectiveDate) ?? Date()))
             } label: {
                 Image(systemName: "pencil")
             }
@@ -421,6 +460,8 @@ private struct OvertimeHistoryView: View {
     @EnvironmentObject private var ticker: EarningsTicker
     @EnvironmentObject private var privacy: PrivacyController
     @EnvironmentObject private var overtime: OvertimeController
+    @EnvironmentObject private var screenCapture: ScreenCaptureMonitor
+    @EnvironmentObject private var drafts: EditingDraftStore
 
     @State private var showingBackfill = false
     @State private var editingSession: OvertimeSession?
@@ -473,19 +514,47 @@ private struct OvertimeHistoryView: View {
         }
         .padding(20)
         .frame(minWidth: 380, minHeight: 320)
-        .onAppear { undoAvailable = overtime.canUndo }
-        .sheet(isPresented: $showingBackfill) {
-            OvertimeSessionEditor(
-                session: editingSession,
-                currencyCode: settings.config.currencyCode,
-                save: { newSession in apply(newSession) },
-                onCancel: { showingBackfill = false },
-                onSaved: { showingBackfill = false }
-            )
-            .environmentObject(settings)
-            .environmentObject(privacy)
-            .environmentObject(ticker)
+        .onAppear {
+            undoAvailable = overtime.canUndo
+            restoreOpenEditor()
         }
+        // 加班调整窗口里同时有工时和金额，保护期间同样换成无操作占位。
+        .sheet(isPresented: $showingBackfill) {
+            ScreenCaptureGate(showsSettingsButton: false, contentWidth: 340, placeholderStyle: .modal) {
+                OvertimeSessionEditor(
+                    session: editingSession,
+                    currencyCode: settings.config.currencyCode,
+                    draft: drafts.overtimeSession.begin(
+                        overtimeDraftKey, seed: .seed(session: editingSession)),
+                    save: { newSession in apply(newSession) },
+                    onCancel: { showingBackfill = false },
+                    onSaved: { showingBackfill = false }
+                )
+                .environmentObject(settings)
+                .environmentObject(privacy)
+                .environmentObject(ticker)
+                .environmentObject(drafts)
+            }
+            .environmentObject(screenCapture)
+        }
+    }
+
+    /// 草稿槽的 key：正在编辑哪一段就用它的 id，新增补录用 `new`。
+    private var overtimeDraftKey: String {
+        editingSession?.id.uuidString ?? "new"
+    }
+
+    /// 重新打开历史窗口时，如果上一次调整因为屏幕保护被打断，把那一份草稿接着填。
+    private func restoreOpenEditor() {
+        guard drafts.overtimeSession.isOpen, let draft = drafts.overtimeSession.draft else { return }
+        if let key = drafts.overtimeSession.key, key != "new" {
+            editingSession = settings.config.overtimeSessions.first { $0.id.uuidString == key }
+        } else {
+            editingSession = nil
+        }
+        // 草稿的起始时间可能和既有段一致；这里只用它决定打开哪一份，不用来落账。
+        _ = draft
+        showingBackfill = true
     }
 
     private func dismiss() {
@@ -572,6 +641,7 @@ private struct OvertimeSessionEditor: View {
     @EnvironmentObject private var settings: SettingsStore
     @EnvironmentObject private var privacy: PrivacyController
     @EnvironmentObject private var ticker: EarningsTicker
+    @EnvironmentObject private var drafts: EditingDraftStore
 
     let session: OvertimeSession?
     let currencyCode: String
@@ -579,16 +649,12 @@ private struct OvertimeSessionEditor: View {
     let onCancel: () -> Void
     let onSaved: () -> Void
 
-    @State private var start: Date
-    @State private var end: Date
-    @State private var kind: OvertimePayKind
-    @State private var multiplier: Int
-    @State private var baseHourlyGross: Double
-    /// true = 基准时薪随开始日期自动解析历史有效值；false = 用户手填（或既有段锁定快照）。
-    @State private var baseIsAuto: Bool
+    /// 未保存的起止时间、倍数、基准时薪整份放草稿：屏幕保护把本视图移出视图树后，
+    /// 重新打开还是用户填到一半的那一份（基准时薪属于薪资派生数据，只在这份内存草稿里）。
+    @State private var draft: OvertimeEditorDraft
     @State private var errorMessage: String?
 
-    init(session: OvertimeSession?, currencyCode: String,
+    init(session: OvertimeSession?, currencyCode: String, draft: OvertimeEditorDraft? = nil,
          save: @escaping (OvertimeSession) -> OvertimeLedgerError?,
          onCancel: @escaping () -> Void, onSaved: @escaping () -> Void) {
         self.session = session
@@ -596,41 +662,26 @@ private struct OvertimeSessionEditor: View {
         self.save = save
         self.onCancel = onCancel
         self.onSaved = onSaved
-        if let session {
-            _start = State(initialValue: session.start)
-            _end = State(initialValue: session.end ?? session.start.addingTimeInterval(3600))
-            _kind = State(initialValue: session.kind)
-            _multiplier = State(initialValue: session.multiplier)
-            _baseHourlyGross = State(initialValue: session.baseHourlyGross)
-            _baseIsAuto = State(initialValue: false) // 既有段：锁定快照，不随日期重价
-        } else {
-            let now = Date()
-            _start = State(initialValue: now)
-            _end = State(initialValue: now.addingTimeInterval(3600))
-            _kind = State(initialValue: .paid)
-            _multiplier = State(initialValue: 1)
-            _baseHourlyGross = State(initialValue: 0)
-            _baseIsAuto = State(initialValue: true) // 新补录：默认按历史有效时薪自动解析
-        }
+        _draft = State(initialValue: draft ?? OvertimeEditorDraft.seed(session: session))
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(session == nil ? Loc.t("overtime.backfill") : Loc.t("overtime.edit")).font(.headline)
-            DatePicker(Loc.t("overtime.start"), selection: $start)
-            DatePicker(Loc.t("overtime.stop"), selection: $end)
-            Picker(Loc.t("overtime.defaultKind"), selection: $kind) {
+            DatePicker(Loc.t("overtime.start"), selection: $draft.start)
+            DatePicker(Loc.t("overtime.stop"), selection: $draft.end)
+            Picker(Loc.t("overtime.defaultKind"), selection: $draft.kind) {
                 ForEach(OvertimePayKind.allCases) { Text($0.label).tag($0) }
             }
             .pickerStyle(.segmented)
-            if kind == .paid {
-                Picker(Loc.t("overtime.multiplier"), selection: $multiplier) {
+            if draft.kind == .paid {
+                Picker(Loc.t("overtime.multiplier"), selection: $draft.multiplier) {
                     ForEach(1...3, id: \.self) { m in Text("×\(m)").tag(m) }
                 }
                 .pickerStyle(.segmented)
             }
             TextField(Loc.t("overtime.base"), value: baseBinding, format: .number)
-            if baseIsAuto {
+            if draft.baseIsAuto {
                 Text(Loc.t("overtime.base.auto"))
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
@@ -645,14 +696,20 @@ private struct OvertimeSessionEditor: View {
 
             HStack {
                 Spacer()
-                Button(Loc.t("salary.history.cancel")) { onCancel() }
+                Button(Loc.t("salary.history.cancel")) {
+                    drafts.overtimeSession.close()
+                    onCancel()
+                }
                 Button(Loc.t("salary.history.save")) {
                     let newSession = OvertimeSession(
-                        start: start, end: end, kind: kind, multiplier: multiplier,
-                        baseHourlyGross: max(baseHourlyGross, 0), currencyCode: currencyCode)
+                        start: draft.start, end: draft.end, kind: draft.kind,
+                        multiplier: draft.multiplier,
+                        baseHourlyGross: max(draft.baseHourlyGross, 0),
+                        currencyCode: currencyCode)
                     if let err = save(newSession) {
                         errorMessage = err.label
                     } else {
+                        drafts.overtimeSession.close()
                         onSaved()
                     }
                 }
@@ -661,25 +718,33 @@ private struct OvertimeSessionEditor: View {
         }
         .padding(20)
         .frame(width: 340)
-        .onAppear { refreshBaseIfAuto() }
-        .onChange(of: start) { _, _ in refreshBaseIfAuto() }
+        // 每次改动都写回草稿；`auto` 态下解析出来的时薪也一起存，重新打开不再重算一次。
+        .onChange(of: draft) { _, newDraft in drafts.overtimeSession.update(newDraft) }
+        .onAppear {
+            refreshBaseIfAuto()
+            drafts.overtimeSession.update(draft)
+        }
+        .onChange(of: draft.start) { _, _ in refreshBaseIfAuto() }
+        .onChange(of: draft.baseIsAuto) { _, isAuto in
+            if isAuto { refreshBaseIfAuto() }
+        }
     }
 
     /// 基准时薪绑定：手填即转 manual（含 0，合法保留）。
     private var baseBinding: Binding<Double> {
         Binding(
-            get: { baseHourlyGross },
+            get: { draft.baseHourlyGross },
             set: { newValue in
-                baseIsAuto = false
-                baseHourlyGross = newValue
+                draft.baseIsAuto = false
+                draft.baseHourlyGross = newValue
             }
         )
     }
 
     /// auto 态随开始日期解析那时有效的正常税前时薪（历史工资/当前工资）。
     private func refreshBaseIfAuto() {
-        guard baseIsAuto else { return }
-        baseHourlyGross = ticker.engine.hourlyGrossRate(on: start)
+        guard draft.baseIsAuto else { return }
+        draft.baseHourlyGross = ticker.engine.hourlyGrossRate(on: draft.start)
     }
 }
 
@@ -689,56 +754,38 @@ private struct SalaryVersionEditor: View {
     @EnvironmentObject private var settings: SettingsStore
     @EnvironmentObject private var privacy: PrivacyController
 
-    let version: SalaryVersion?
+    /// 草稿由保护层外的状态对象持有，屏幕采集打断后字段值仍然在。
+    @Binding var draft: SettingsUIState.SalaryEditorDraft
     let currencyCode: String
     let onCancel: () -> Void
     let onSave: (SalaryVersion) -> Void
 
-    @State private var amount: Double
-    @State private var period: SalaryPeriod
-    @State private var payMonths: Int
-    @State private var effectiveDate: Date
-
-    init(version: SalaryVersion?, currencyCode: String, onCancel: @escaping () -> Void, onSave: @escaping (SalaryVersion) -> Void) {
-        self.version = version
-        self.currencyCode = currencyCode
-        self.onCancel = onCancel
-        self.onSave = onSave
-        let base = version ?? SalaryVersion(
-            effectiveDate: DayKeyCoder.current.key(for: Date()),
-            amount: 0,
-            period: .monthly,
-            payMonthsPerYear: 12)
-        _amount = State(initialValue: base.amount)
-        _period = State(initialValue: base.period)
-        _payMonths = State(initialValue: base.payMonthsPerYear)
-        let initialDate = DayKeyCoder.current.date(from: base.effectiveDate) ?? Date()
-        _effectiveDate = State(initialValue: initialDate)
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(version == nil ? Loc.t("salary.history.add") : Loc.t("salary.history.edit"))
+            Text(draft.isNew ? Loc.t("salary.history.add") : Loc.t("salary.history.edit"))
                 .font(.headline)
 
-            TextField(Loc.t("salary.history.amount"), value: $amount, format: .number)
-            Picker(Loc.t("salary.history.period"), selection: $period) {
+            TextField(Loc.t("salary.history.amount"), value: $draft.amount, format: .number)
+            Picker(Loc.t("salary.history.period"), selection: $draft.period) {
                 ForEach(SalaryPeriod.allCases) { Text($0.label).tag($0) }
             }
             .pickerStyle(.segmented)
-            Stepper(Loc.t("salary.payMonths", payMonths), value: $payMonths, in: 12...20)
-            DatePicker(Loc.t("salary.history.effective"), selection: $effectiveDate, displayedComponents: .date)
+            Stepper(
+                Loc.t("salary.payMonths", draft.payMonthsPerYear),
+                value: $draft.payMonthsPerYear,
+                in: 12...20)
+            DatePicker(Loc.t("salary.history.effective"), selection: $draft.effectiveDate, displayedComponents: .date)
 
             HStack {
                 Spacer()
                 Button(Loc.t("salary.history.cancel")) { onCancel() }
                 Button(Loc.t("salary.history.save")) {
-                    let key = DayKeyCoder.current.key(for: effectiveDate)
+                    let key = DayKeyCoder.current.key(for: draft.effectiveDate)
                     onSave(SalaryVersion(
                         effectiveDate: key,
-                        amount: max(amount, 0),
-                        period: period,
-                        payMonthsPerYear: payMonths))
+                        amount: max(draft.amount, 0),
+                        period: draft.period,
+                        payMonthsPerYear: draft.payMonthsPerYear))
                 }
                 .keyboardShortcut(.defaultAction)
             }
@@ -775,7 +822,7 @@ private struct TaxTab: View {
         Form {
             Section {
                 Picker(Loc.t("salary.tax.region"), selection: $settings.config.tax.region) {
-                    ForEach(TaxRegionPreset.all, id: \.id) { Text($0.name).tag($0.id) }
+                    ForEach(TaxRegionPreset.all, id: \.id) { Text($0.displayName).tag($0.id) }
                     Text(Loc.t("salary.tax.region.custom")).tag("custom")
                 }
                 .onChange(of: settings.config.tax.region) { _, _ in
@@ -1201,6 +1248,8 @@ private struct HolidayTab: View {
                 dates: $settings.config.makeupWorkdays,
                 automatic: upcomingMakeup
             )
+
+            LeaveHistorySection()
         }
         .formStyle(.grouped)
     }

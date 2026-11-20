@@ -15,7 +15,7 @@ import Sparkle
 final class UpdaterService: NSObject, ObservableObject {
     /// 「检查更新…」按钮是否可点。由 Sparkle 通过 KVO 驱动，检查期间自动变 false。
     @Published private(set) var canCheckForUpdates = false
-    /// 自动检查开关。默认关；用户打开后写回 Sparkle 自己的持久化设置。
+    /// 自动检查开关。首次按 Info.plist 的默认开启迁移一次，之后完全跟随用户设置。
     @Published var automaticallyChecksForUpdates = false
     /// 配置不完整时的可读说明；非 nil 时不启动更新器，界面直接展示这一条。
     @Published private(set) var configurationIssue: String?
@@ -23,6 +23,7 @@ final class UpdaterService: NSObject, ObservableObject {
     private var controller: SPUStandardUpdaterController?
     private var cancellables = Set<AnyCancellable>()
     private var started = false
+    private let defaults: UserDefaults
 
     /// Info.plist 里必需的两个键，缺一不可。
     static let requiredInfoKeys = ["SUFeedURL", "SUPublicEDKey"]
@@ -32,11 +33,12 @@ final class UpdaterService: NSObject, ObservableObject {
     private let infoOverride: [String: Any]?
 
     override convenience init() {
-        self.init(infoOverride: nil)
+        self.init(infoOverride: nil, defaults: .standard)
     }
 
-    init(infoOverride: [String: Any]?) {
+    init(infoOverride: [String: Any]?, defaults: UserDefaults = .standard) {
         self.infoOverride = infoOverride
+        self.defaults = defaults
         super.init()
         start()
     }
@@ -68,6 +70,15 @@ final class UpdaterService: NSObject, ObservableObject {
             .store(in: &cancellables)
 
         controller.startUpdater()
+
+        // 1.2.5 之前构建把它默认写成了关闭，旧安装可能持久化了 false。
+        // 仅在 Info.plist 明确要求默认开启时，迁移一次；之后的用户手动关闭不会再被覆盖。
+        let desiredDefault = (infoOverride ?? Bundle.main.infoDictionary)?["SUEnableAutomaticChecks"] as? Bool ?? false
+        let migrationKey = "updater.defaultAutomaticChecksMigrated.1.2.5"
+        if desiredDefault, !defaults.bool(forKey: migrationKey) {
+            controller.updater.automaticallyChecksForUpdates = true
+            defaults.set(true, forKey: migrationKey)
+        }
     }
 
     /// 用户点「检查更新…」。网络错误、没有更新、下载进度全部交给官方 UI。

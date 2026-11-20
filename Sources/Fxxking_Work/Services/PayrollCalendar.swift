@@ -125,13 +125,13 @@ struct PayrollCalendar {
             return PayrollPeriod(
                 start: now, endExclusive: now, settlementDate: now,
                 nominalPayday: now, nextPayday: now, remainingDays: 0,
-                notes: ["无法计算账期"])
+                notes: [Loc.t("payroll.notes.unavailable")])
         }
 
         let payday = nominalPayday(after: settlement)
         var notes: [String] = []
         if case .sameMonth = offset, payday < settlement {
-            notes.append("同月发薪早于结算日，请确认雇主规则")
+            notes.append(Loc.t("payroll.notes.sameMonthBeforeSettlement"))
         }
 
         let next = nextPayday(onOrAfter: now)

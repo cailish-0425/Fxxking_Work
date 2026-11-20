@@ -123,6 +123,36 @@ struct PayrollSettings: Codable, Equatable {
     var paydayDay: Int = 10
     /// 发薪在结算月当月还是次月。
     var offset: PaydayOffset = .nextMonth
+    /// 发薪日前一天 20:00 发本地通知；默认开启，关闭自定义账期时不会调度。
+    var reminderEnabled: Bool = true
+
+    init(
+        enabled: Bool = false,
+        cutoffDay: Int = 25,
+        paydayDay: Int = 10,
+        offset: PaydayOffset = .nextMonth,
+        reminderEnabled: Bool = true
+    ) {
+        self.enabled = enabled
+        self.cutoffDay = cutoffDay
+        self.paydayDay = paydayDay
+        self.offset = offset
+        self.reminderEnabled = reminderEnabled
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case enabled, cutoffDay, paydayDay, offset, reminderEnabled
+    }
+
+    init(from decoder: Decoder) throws {
+        self.init()
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        enabled = try c.decodeIfPresent(Bool.self, forKey: .enabled) ?? enabled
+        cutoffDay = try c.decodeIfPresent(Int.self, forKey: .cutoffDay) ?? cutoffDay
+        paydayDay = try c.decodeIfPresent(Int.self, forKey: .paydayDay) ?? paydayDay
+        offset = try c.decodeIfPresent(PaydayOffset.self, forKey: .offset) ?? offset
+        reminderEnabled = try c.decodeIfPresent(Bool.self, forKey: .reminderEnabled) ?? reminderEnabled
+    }
 
     /// 由当前设置构造 PayrollCalendar；disabled 时返回 nil（调用方回退自然月口径）。
     var calendar: PayrollCalendar? {
@@ -183,6 +213,10 @@ struct Configuration: Codable, Equatable {
     var overtimeMultiplier: Int = 1
     /// 加班台账（持久化，重启恢复；进行中的段一并保留）。
     var overtimeSessions: [OvertimeSession] = []
+    /// 按日期记录的个人请假。公司级休息日仍放在 `extraHolidays`。
+    var leaveEntries: [LeaveEntry] = []
+    /// 新安装先进入引导；预置配置和旧配置视为已经完成。
+    var onboardingCompleted: Bool = true
 
     init() {}
 
@@ -220,6 +254,8 @@ struct Configuration: Codable, Equatable {
         overtimePayDefault = (try? c.decode(OvertimePayKind.self, forKey: .overtimePayDefault)) ?? overtimePayDefault
         overtimeMultiplier = (try? c.decode(Int.self, forKey: .overtimeMultiplier)) ?? overtimeMultiplier
         overtimeSessions = (try? c.decode([OvertimeSession].self, forKey: .overtimeSessions)) ?? overtimeSessions
+        leaveEntries = (try? c.decode([LeaveEntry].self, forKey: .leaveEntries)) ?? leaveEntries
+        onboardingCompleted = (try? c.decode(Bool.self, forKey: .onboardingCompleted)) ?? onboardingCompleted
         tax = (try? c.decode(TaxProfile.self, forKey: .tax)) ?? tax
     }
 

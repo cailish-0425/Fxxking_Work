@@ -86,10 +86,10 @@ enum NetPayCalculator {
         let social = profile.social
         let preset = TaxRegionPreset.all.first(where: { $0.id == profile.region })
         if preset == nil, !profile.region.isEmpty, profile.region != "custom" {
-            r.issues.append("地区「\(profile.region)」未在参考清单中，按自定义参数估算，请确认缴费资格")
+            r.issues.append(Loc.t("salary.tax.issue.regionUnknown", profile.region))
         }
         if profile.region == "custom" || (preset == nil && !profile.region.isEmpty) {
-            r.issues.append("自定义模式：缴费基数、比例与扣除资格请按实际工资单确认，本结果不视为官方核定")
+            r.issues.append(Loc.t("salary.tax.issue.custom"))
         }
 
         func baseState(_ b: SocialBase) -> BaseState {
@@ -112,7 +112,7 @@ enum NetPayCalculator {
             case .manual(let m):
                 // 手填值保留（含 0）；负值/非法金额在此层拦截，不 clamp、不覆盖。
                 guard m.cents >= 0 else {
-                    r.blocked.append("\(name)手填基数不能为负")
+                    r.blocked.append(Loc.t("salary.tax.blocked.manualBaseNegative", name))
                     return it
                 }
                 it.base = m
@@ -122,11 +122,13 @@ enum NetPayCalculator {
                     let yuan = it.base.cents / 100
                     if let minYuan, yuan < minYuan {
                         r.blocked.append(
-                            "\(name)基数 \(it.base.doubleYuan) 元低于 \(preset.name)参考下限 \(minYuan) 元；如需按此估算请切换为自定义地区")
+                            Loc.t("salary.tax.blocked.manualBaseBelowMin",
+                                  name, it.base.doubleYuan, preset.displayName, minYuan))
                     }
                     if let maxYuan, yuan > maxYuan {
                         r.blocked.append(
-                            "\(name)基数 \(it.base.doubleYuan) 元超出 \(preset.name)参考上限 \(maxYuan) 元；如需按此估算请切换为自定义地区")
+                            Loc.t("salary.tax.blocked.manualBaseAboveMax",
+                                  name, it.base.doubleYuan, preset.displayName, maxYuan))
                     }
                 }
             case .auto:
@@ -145,13 +147,17 @@ enum NetPayCalculator {
             return it
         }
 
-        r.pension = item(social.pension, rateBp: social.pensionRateBp, name: "养老",
+        r.pension = item(social.pension, rateBp: social.pensionRateBp,
+                         name: Loc.t("salary.tax.pension"),
                          minYuan: preset?.socialBaseMinYuan, maxYuan: preset?.socialBaseMaxYuan)
-        r.medical = item(social.medical, rateBp: social.medicalRateBp, name: "医疗",
+        r.medical = item(social.medical, rateBp: social.medicalRateBp,
+                         name: Loc.t("salary.tax.medical"),
                          minYuan: preset?.socialBaseMinYuan, maxYuan: preset?.socialBaseMaxYuan)
-        r.unemployment = item(social.unemployment, rateBp: social.unemploymentRateBp, name: "失业",
+        r.unemployment = item(social.unemployment, rateBp: social.unemploymentRateBp,
+                              name: Loc.t("salary.tax.unemployment"),
                               minYuan: preset?.socialBaseMinYuan, maxYuan: preset?.socialBaseMaxYuan)
-        r.housingFund = item(social.housingFund, rateBp: social.housingFundRateBp, name: "公积金",
+        r.housingFund = item(social.housingFund, rateBp: social.housingFundRateBp,
+                             name: Loc.t("salary.tax.housingFund"),
                              minYuan: preset?.fundBaseMinYuan, maxYuan: preset?.fundBaseMaxYuan)
 
         // 医疗固定额：独立 auto/手动/不参与，不被基数状态吞掉。
@@ -162,7 +168,7 @@ enum NetPayCalculator {
             fixed.base = .zero; fixed.amount = .zero
         case .manual(let m):
             guard m.cents >= 0 else {
-                r.blocked.append("医疗固定额不能为负")
+                r.blocked.append(Loc.t("salary.tax.blocked.medicalFixedNegative"))
                 break
             }
             fixed.base = m
@@ -175,14 +181,14 @@ enum NetPayCalculator {
 
         // 比例范围校验：仅对参与缴费（非 disabled）的项生效，disabled 的隐藏残留值不误报。
         let rateItems: [(SocialBase, Int, String)] = [
-            (social.pension, social.pensionRateBp, "养老"),
-            (social.medical, social.medicalRateBp, "医疗"),
-            (social.unemployment, social.unemploymentRateBp, "失业"),
-            (social.housingFund, social.housingFundRateBp, "公积金"),
+            (social.pension, social.pensionRateBp, Loc.t("salary.tax.pension")),
+            (social.medical, social.medicalRateBp, Loc.t("salary.tax.medical")),
+            (social.unemployment, social.unemploymentRateBp, Loc.t("salary.tax.unemployment")),
+            (social.housingFund, social.housingFundRateBp, Loc.t("salary.tax.housingFund")),
         ]
         for (base, bp, name) in rateItems where base != .disabled {
             if bp < 0 || bp > 10_000 {
-                r.blocked.append("\(name)个人比例须在 0–100% 之间")
+                r.blocked.append(Loc.t("salary.tax.blocked.rateOutOfRange", name))
             }
         }
         // 公积金比例：参考地区范围内校验，超范围按自定义处理并提示，不得按地区官方正常计算。
@@ -190,7 +196,10 @@ enum NetPayCalculator {
             let bp = social.housingFundRateBp
             if bp < preset.fundRateMinBp || bp > preset.fundRateMaxBp {
                 r.blocked.append(
-                    "公积金个人比例 \(Double(bp) / 100)% 超出 \(preset.name)参考范围 \(Double(preset.fundRateMinBp) / 100)%–\(Double(preset.fundRateMaxBp) / 100)%；如需按此估算请切换为自定义地区")
+                    Loc.t("salary.tax.blocked.housingFundRateOutOfRange",
+                          Double(bp) / 100, preset.displayName,
+                          Double(preset.fundRateMinBp) / 100,
+                          Double(preset.fundRateMaxBp) / 100))
             }
         }
         return r
@@ -207,31 +216,31 @@ enum NetPayCalculator {
         var result = Result()
 
         guard applies(countryCode: countryCode, currencyCode: currencyCode) else {
-            result.blocked.append("税后仅支持中国大陆单位职工且货币为 CNY")
+            result.blocked.append(Loc.t("salary.tax.blocked.notMainlandCNY"))
             return result
         }
 
         // —— 参数校验（阻塞项）——
         if grossMonthly.cents < 0 {
-            result.blocked.append("月薪不能为负")
+            result.blocked.append(Loc.t("salary.tax.blocked.salaryNegative"))
         }
         if grossMonthly.cents > 1_000_000_000_00 {
-            result.blocked.append("月薪金额异常，超出可计算范围")
+            result.blocked.append(Loc.t("salary.tax.blocked.salaryTooLarge"))
         }
         if !(1...12).contains(profile.employmentStartMonth) {
-            result.blocked.append("任职起月须在 1–12 之间")
+            result.blocked.append(Loc.t("salary.tax.blocked.startMonthOutOfRange"))
         }
         if !(1...12).contains(profile.bonusMonth) {
-            result.blocked.append("13/14 薪发放月份须在 1–12 之间")
+            result.blocked.append(Loc.t("salary.tax.blocked.bonusMonthOutOfRange"))
         }
         if payMonthsPerYear > 12, profile.bonusMonth < profile.employmentStartMonth {
-            result.blocked.append("13/14 薪发放月份早于任职起月，额外薪资无法归属，请调整发放月份或任职起月")
+            result.blocked.append(Loc.t("salary.tax.blocked.bonusBeforeStart"))
         }
         if profile.monthlySpecialDeduction.cents < 0 {
-            result.blocked.append("专项附加扣除不能为负")
+            result.blocked.append(Loc.t("salary.tax.blocked.specialDeductionNegative"))
         }
         if profile.monthlyOtherDeduction.cents < 0 {
-            result.blocked.append("其他扣除不能为负")
+            result.blocked.append(Loc.t("salary.tax.blocked.otherDeductionNegative"))
         }
 
         let resolved = resolve(profile: profile, grossMonthly: grossMonthly)
@@ -241,7 +250,9 @@ enum NetPayCalculator {
 
         let socialTotal = resolved.total
         if socialTotal.cents > grossMonthly.cents {
-            result.blocked.append("当月个人缴费合计 \(socialTotal.doubleYuan) 元超过月薪毛额 \(grossMonthly.doubleYuan) 元")
+            result.blocked.append(
+                Loc.t("salary.tax.blocked.socialExceedsGross",
+                      socialTotal.doubleYuan, grossMonthly.doubleYuan))
         }
 
         if !result.blocked.isEmpty {
@@ -326,37 +337,37 @@ enum NetPayCalculator {
     ) -> Result {
         guard grossPerMonth.count == 12 else {
             var r = Result()
-            r.blocked.append("逐月毛额必须恰好 12 个月")
+            r.blocked.append(Loc.t("salary.tax.blocked.grossMonthCount"))
             return r
         }
 
         var result = Result()
         guard applies(countryCode: countryCode, currencyCode: currencyCode) else {
-            result.blocked.append("税后仅支持中国大陆单位职工且货币为 CNY")
+            result.blocked.append(Loc.t("salary.tax.blocked.notMainlandCNY"))
             return result
         }
 
         // —— 参数校验（阻塞项）——
         if grossPerMonth.contains(where: { $0.cents < 0 }) {
-            result.blocked.append("月薪不能为负")
+            result.blocked.append(Loc.t("salary.tax.blocked.salaryNegative"))
         }
         if grossPerMonth.contains(where: { $0.cents > 1_000_000_000_00 }) {
-            result.blocked.append("月薪金额异常，超出可计算范围")
+            result.blocked.append(Loc.t("salary.tax.blocked.salaryTooLarge"))
         }
         if !(1...12).contains(profile.employmentStartMonth) {
-            result.blocked.append("任职起月须在 1–12 之间")
+            result.blocked.append(Loc.t("salary.tax.blocked.startMonthOutOfRange"))
         }
         if !(1...12).contains(profile.bonusMonth) {
-            result.blocked.append("13/14 薪发放月份须在 1–12 之间")
+            result.blocked.append(Loc.t("salary.tax.blocked.bonusMonthOutOfRange"))
         }
         if payMonthsPerYear > 12, profile.bonusMonth < profile.employmentStartMonth {
-            result.blocked.append("13/14 薪发放月份早于任职起月，额外薪资无法归属，请调整发放月份或任职起月")
+            result.blocked.append(Loc.t("salary.tax.blocked.bonusBeforeStart"))
         }
         if profile.monthlySpecialDeduction.cents < 0 {
-            result.blocked.append("专项附加扣除不能为负")
+            result.blocked.append(Loc.t("salary.tax.blocked.specialDeductionNegative"))
         }
         if profile.monthlyOtherDeduction.cents < 0 {
-            result.blocked.append("其他扣除不能为负")
+            result.blocked.append(Loc.t("salary.tax.blocked.otherDeductionNegative"))
         }
 
         // 社保：auto 基数随「各月正常工资」逐月取值（工资历史分段），manual/disabled 保持不变。
@@ -364,7 +375,7 @@ enum NetPayCalculator {
         // socialBaseMonthly 单值全月沿用（旧调用方兼容）。
         // 显式传入 socialBasePerMonth 但长度非 12 → 参数错误，blocked（不静默忽略）。
         if let socialBasePerMonth, socialBasePerMonth.count != 12 {
-            result.blocked.append("逐月社保基数必须恰好 12 个月")
+            result.blocked.append(Loc.t("salary.tax.blocked.socialBaseMonthCount"))
             return result
         }
         let socialBases: [Money]
@@ -404,7 +415,8 @@ enum NetPayCalculator {
         for (i, gross) in grossPerMonth.enumerated() where gross.cents > 0 {
             if perMonthSocial[i].total.cents > gross.cents {
                 result.blocked.append(
-                    "当月个人缴费合计 \(perMonthSocial[i].total.doubleYuan) 元超过月薪毛额 \(gross.doubleYuan) 元")
+                    Loc.t("salary.tax.blocked.socialExceedsGross",
+                          perMonthSocial[i].total.doubleYuan, gross.doubleYuan))
             }
         }
 

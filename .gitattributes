@@ -1,0 +1,2 @@
+# Scripts/check-localization.py 沿用历史 CRLF；只把 CR 视为行尾，真正的行尾空格仍会报错。
+Scripts/check-localization.py whitespace=cr-at-eol

@@ -1,5 +1,5 @@
 import Foundation
-import UserNotifications
+@preconcurrency import UserNotifications
 
 /// 解锁后发一条系统通知。
 ///
@@ -11,17 +11,35 @@ final class AwayNotifier: NSObject {
 
     private var authorized = false
     private var didRequest = false
+    private var readyCallbacks: [@MainActor () -> Void] = []
 
     /// 没有 bundle 标识时 UNUserNotificationCenter.current() 会直接崩，命令行跑断言时就是这种情况。
     private var isAvailable: Bool { Bundle.main.bundleIdentifier != nil }
 
-    func prepare() {
-        guard isAvailable, !didRequest else { return }
+    func prepare(onReady: (@MainActor () -> Void)? = nil) {
+        guard isAvailable else {
+            onReady?()
+            return
+        }
+        if authorized {
+            onReady?()
+            return
+        }
+        if let onReady {
+            readyCallbacks.append(onReady)
+        }
+        guard !didRequest else { return }
         didRequest = true
         let center = UNUserNotificationCenter.current()
         center.delegate = self
         center.requestAuthorization(options: [.alert]) { [weak self] granted, _ in
-            Task { @MainActor in self?.authorized = granted }
+            Task { @MainActor in
+                guard let self else { return }
+                self.authorized = granted
+                let callbacks = self.readyCallbacks
+                self.readyCallbacks.removeAll()
+                callbacks.forEach { $0() }
+            }
         }
     }
 
@@ -36,6 +54,53 @@ final class AwayNotifier: NSObject {
             trigger: nil
         )
         UNUserNotificationCenter.current().add(request)
+    }
+
+    struct ScheduledNotification {
+        var identifier: String
+        var title: String
+        var body: String
+        var date: Date
+    }
+
+    /// 用新一组通知完整替换某个前缀下的旧通知，避免设置变化后残留重复提醒。
+    func replaceScheduledNotifications(prefix: String, notifications: [ScheduledNotification]) {
+        guard isAvailable else { return }
+        let center = UNUserNotificationCenter.current()
+        center.getPendingNotificationRequests { pending in
+            let stale = pending.map(\.identifier).filter { $0.hasPrefix(prefix) }
+            if !stale.isEmpty {
+                center.removePendingNotificationRequests(withIdentifiers: stale)
+            }
+            Task { @MainActor [weak self] in
+                guard let self, self.authorized else { return }
+                for item in notifications {
+                    let content = UNMutableNotificationContent()
+                    content.title = item.title
+                    content.body = item.body
+                    let components = Calendar.current.dateComponents(
+                        [.year, .month, .day, .hour, .minute],
+                        from: item.date
+                    )
+                    let request = UNNotificationRequest(
+                        identifier: item.identifier,
+                        content: content,
+                        trigger: UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+                    )
+                    try? await center.add(request)
+                }
+            }
+        }
+    }
+
+    func cancelScheduledNotifications(prefix: String) {
+        guard isAvailable else { return }
+        let center = UNUserNotificationCenter.current()
+        center.getPendingNotificationRequests { pending in
+            let stale = pending.map(\.identifier).filter { $0.hasPrefix(prefix) }
+            guard !stale.isEmpty else { return }
+            center.removePendingNotificationRequests(withIdentifiers: stale)
+        }
     }
 }
 

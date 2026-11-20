@@ -420,9 +420,9 @@ do {
 do {
     let systemRegion = Locale.current.region
 
-    // 联合国六种官方语言里的五种，暂缺需要 RTL 的阿拉伯语。
+    // 英中法俄西 + 日韩；暂缺需要 RTL 的阿拉伯语。
     let codes = AppLanguage.allCases.compactMap(\.localizationCode)
-    expect(Set(codes) == ["en", "zh-Hans", "fr", "ru", "es"], "应当覆盖英中法俄西五种语言，实际是 \(codes.sorted())")
+    expect(Set(codes) == ["en", "zh-Hans", "fr", "ru", "es", "ja", "ko"], "应当覆盖英中法俄西日韩七种语言，实际是 \(codes.sorted())")
     expect(Set(codes).count == codes.count, "语言代码不能重复，否则两个选项会指向同一个语言包")
     expect(AppLanguage.allCases.first == .system, "跟随系统应当排在选择器第一位")
 
@@ -463,13 +463,15 @@ do {
     let hoursRU = Formatters.duration(12250)
     expect(hoursRU.contains("ч"), "俄语时长应当用西里尔字母的单位，实际是 \(hoursRU)")
 
-    // 五种语言的时长写法必须两两不同，否则说明某种语言压根没生效。
+    // 七种语言的时长写法必须两两不同，否则说明某种语言压根没生效。
     var spellings: Set<String> = []
     for language in AppLanguage.allCases where language != .system {
         Loc.select(language)
         spellings.insert(Formatters.duration(12250))
     }
-    expect(spellings.count == 5, "五种语言应当给出 5 种不同的时长写法，实际只有 \(spellings.count) 种")
+    expect(
+        spellings.count == AppLanguage.allCases.filter { $0 != .system }.count,
+        "七种语言应当给出 7 种不同的时长写法，实际只有 \(spellings.count) 种")
 
     Loc.select(.system)
 }
@@ -757,7 +759,9 @@ do {
         grossMonthly: Money.yuan(20_000), payMonthsPerYear: 12, profile: p3,
         countryCode: "CN", currencyCode: "CNY")
     expect(!r3.available, "参考地区手填超上限应阻塞")
-    expect(r3.blocked.contains { $0.contains("超出") && $0.contains("自定义") }, "阻塞信息应提示可切自定义")
+    expect(
+        r3.blocked.contains { $0.contains("salary.tax.blocked.manualBaseAboveMax") },
+        "阻塞信息应走本地化 key，并说明参考上限")
     // 保留原输入：resolve 返回的 base 仍是 50000，不被 clamp/覆盖。
     let resolvedOver = NetPayCalculator.resolve(profile: p3, grossMonthly: Money.yuan(20_000))
     expectClose(resolvedOver.pension.base.doubleYuan, 50_000, "手填超限值保留原输入")
@@ -770,7 +774,9 @@ do {
         countryCode: "CN", currencyCode: "CNY")
     expect(rc.available, "自定义地区手填超限可估算")
     expectClose(rc.months[0].social.pension.doubleYuan, 4_000, "自定义手填 50000 养老 8% = 4000")
-    expect(rc.warnings.contains { $0.contains("自定义") }, "自定义模式给假设提示")
+    expect(
+        rc.warnings.contains { $0.contains("salary.tax.issue.custom") },
+        "自定义模式给本地化假设提示")
 }
 
 // MARK: - 税前税后：参数范围与比例校验
@@ -812,7 +818,9 @@ do {
         grossMonthly: Money.yuan(20_000), payMonthsPerYear: 12, profile: fundHigh,
         countryCode: "CN", currencyCode: "CNY")
     expect(!rFund.available, "公积金比例超参考范围应阻塞")
-    expect(rFund.blocked.contains { $0.contains("公积金") }, "阻塞信息指出公积金比例")
+    expect(
+        rFund.blocked.contains { $0.contains("salary.tax.blocked.housingFundRateOutOfRange") },
+        "阻塞信息应走本地化 key，并指出公积金比例")
 
     var fundCustom = fundHigh; fundCustom.region = "custom"
     let rFundC = NetPayCalculator.compute(
@@ -973,6 +981,19 @@ do {
     let decoded = try? JSONDecoder().decode(Configuration.self, from: legacy)
     expect(decoded?.payroll.enabled == false, "旧配置账期默认关闭（自然月）")
 
+    let legacyPayroll = #"{"enabled":true,"cutoffDay":25,"paydayDay":10,"offset":"nextMonth"}"#
+        .data(using: .utf8)!
+    let decodedPayroll = try? JSONDecoder().decode(PayrollSettings.self, from: legacyPayroll)
+    expect(decodedPayroll?.enabled == true, "旧账期配置仍可解码")
+    expect(decodedPayroll?.reminderEnabled == true, "旧账期配置默认开启发薪提醒")
+    let trimmedReminder = PayrollSettings(
+        enabled: true, cutoffDay: 25, paydayDay: 10,
+        offset: .nextMonth, reminderEnabled: false)
+    let reminderRoundTrip = try? JSONDecoder().decode(
+        PayrollSettings.self,
+        from: JSONEncoder().encode(trimmedReminder))
+    expect(reminderRoundTrip?.reminderEnabled == false, "发薪提醒开关编码往返保留")
+
     var cal = Calendar(identifier: .gregorian)
     cal.timeZone = TimeZone(identifier: "UTC")!
 
@@ -999,6 +1020,33 @@ do {
     let onPayday = pc.period(containing: date("2026-05-10 00:00:00"))
     expect(onPayday.remainingDays == 0, "发薪当天剩余 0 天")
 
+    let reminderDates = PayrollReminderSchedule.reminderDates(
+        now: date("2026-05-09 10:00:00"),
+        payroll: pc,
+        calendar: cal,
+        limit: 2
+    )
+    expect(reminderDates.count == 2, "连续生成两期发薪提醒")
+    expect(
+        reminderDates.first == date("2026-05-09 20:00:00"),
+        "发薪日前一天 20:00 触发提醒"
+    )
+    expect(
+        reminderDates.last == date("2026-06-09 20:00:00"),
+        "下一期提醒滚动到下一个发薪日前一天"
+    )
+
+    let afterReminder = PayrollReminderSchedule.reminderDates(
+        now: date("2026-05-09 21:00:00"),
+        payroll: pc,
+        calendar: cal,
+        limit: 1
+    )
+    expect(
+        afterReminder.first == date("2026-06-09 20:00:00"),
+        "当天 20:00 已过时顺延到下一期提醒"
+    )
+
     // 无该日按月末：cutoff 31 在 4 月（30 天）夹取到 30。
     let pc31 = try PayrollCalendar(calendar: cal, cutoffDay: 31, paydayDay: 31, offset: .sameMonth)
     let apr = pc31.period(containing: date("2026-04-15 10:00:00"))
@@ -1017,7 +1065,9 @@ do {
     cal.timeZone = TimeZone(identifier: "UTC")!
     let pc = try PayrollCalendar(calendar: cal, cutoffDay: 25, paydayDay: 10, offset: .sameMonth)
     let p = pc.period(containing: date("2026-05-15 10:00:00"))
-    expect(p.notes.contains { $0.contains("早于") }, "同月发薪早于结算给出提示")
+    expect(
+        p.notes.contains { $0.contains("payroll.notes.sameMonthBeforeSettlement") },
+        "同月发薪早于结算给出本地化提示")
 }
 
 // MARK: - 工资变更历史：生效日期解析
@@ -1741,7 +1791,7 @@ do {
     invalidBonus.tax.bonusMonth = 2
     let invalidBonusEngine = engine(invalidBonus, now: date("2026-12-31 12:00:00"))
     expect(
-        invalidBonusEngine.netBlocked.contains { $0.contains("发放月份早于任职起月") },
+        invalidBonusEngine.netBlocked.contains { $0.contains("salary.tax.blocked.bonusBeforeStart") },
         "额外薪月份早于任职起月时明确阻塞，而不是静默丢失"
     )
 
@@ -2126,6 +2176,117 @@ do {
             socialBasePerMonth: Array(repeating: .yuan(10000), count: invalidCount))
         expect(!invalid.available && !invalid.blocked.isEmpty, "显式社保月份数量错误应阻塞")
     }
+}
+
+// MARK: - 请假按比例进入今日、月/年、税后与账期，而不是只在界面显示
+
+do {
+    let config = baseConfig()
+    let now = date("2026-08-04 18:00:00")
+    let baseline = engine(config, now: now).snapshot(at: now)
+    let dailyPay = config.monthlyPay / Double(engine(config, now: now).workdaysThisMonth)
+
+    var personal = config
+    personal.leaveEntries = [
+        LeaveEntry(dayKey: "2026-08-04", kind: .personal, portion: .fullDay)
+    ]
+    let personalE = engine(personal, now: now)
+    let personalSnap = personalE.snapshot(at: now)
+    expectClose(personalSnap.dayTotal, 0, "全天事假不计薪，当天额度为 0")
+    expectClose(personalSnap.dayEarned, 0, "全天事假不计薪，当天已赚为 0")
+    expectClose(personalSnap.monthEarned, baseline.monthEarned - dailyPay,
+                "全天事假只减少当天一分日薪")
+    expectClose(personalSnap.monthTotal, baseline.monthTotal - dailyPay,
+                "全天事假同步减少本月应发总额")
+    expectClose(personalSnap.yearTotal, baseline.yearTotal - dailyPay,
+                "全天事假同步减少本年应发总额")
+    expect(personalSnap.status == .onLeave(personal.leaveEntries[0]), "全天事假显示请假状态")
+    expectClose(personalSnap.remainingSecondsToday, 0, "全天事假没有剩余计薪秒")
+
+    var sick = config
+    sick.leaveEntries = [
+        LeaveEntry(dayKey: "2026-08-04", kind: .sick, portion: .fullDay)
+    ]
+    let sickSnap = engine(sick, now: now).snapshot(at: now)
+    expectClose(sickSnap.dayTotal, dailyPay * 0.6, "全天病假按 60% 计薪")
+    expectClose(sickSnap.dayEarned, dailyPay * 0.6, "全天病假收工时拿 60% 日薪")
+    expectClose(sickSnap.monthEarned, baseline.monthEarned - dailyPay * 0.4,
+                "全天病假只减少未计薪的 40%")
+
+    var annual = config
+    annual.leaveEntries = [
+        LeaveEntry(dayKey: "2026-08-04", kind: .annual, portion: .fullDay)
+    ]
+    let annualSnap = engine(annual, now: now).snapshot(at: now)
+    expectClose(annualSnap.dayEarned, baseline.dayEarned, "全天年假 100% 计薪，金额不变")
+    expectClose(annualSnap.monthEarned, baseline.monthEarned, "全天年假不改变本月金额")
+
+    var morning = config
+    morning.leaveEntries = [
+        LeaveEntry(dayKey: "2026-08-04", kind: .personal, portion: .morning)
+    ]
+    let morningE = engine(morning, now: now)
+    let morningBefore = morningE.snapshot(at: date("2026-08-04 09:00:00"))
+    let morningEnd = morningE.snapshot(at: now)
+    expectClose(morningBefore.dayEarned, 0, "上午事假在下午开工前已赚为 0")
+    expectClose(morningEnd.dayTotal, dailyPay * 0.5, "上午事假只保留下午半日额度")
+    expectClose(morningEnd.dayEarned, dailyPay * 0.5, "上午事假收工时只拿半天工资")
+    expectClose(morningEnd.elapsedSecondsToday, 5 * 3600, "上午事假只累计下午 5 小时")
+
+    var afternoon = config
+    afternoon.leaveEntries = [
+        LeaveEntry(dayKey: "2026-08-04", kind: .personal, portion: .afternoon)
+    ]
+    let afternoonAtTen = engine(afternoon, now: date("2026-08-04 10:00:00"))
+        .snapshot(at: date("2026-08-04 10:00:00"))
+    expectClose(
+        afternoonAtTen.dayEarned, dailyPay * 0.5 * (1.0 / 3.0),
+        "下午事假上午工作 1 小时只累计半日额度的 1/3"
+    )
+
+    var payrollBase = config
+    payrollBase.payroll = PayrollSettings(
+        enabled: true, cutoffDay: 31, paydayDay: 31, offset: .sameMonth
+    )
+    var payrollLeave = payrollBase
+    payrollLeave.leaveEntries = personal.leaveEntries
+    let payrollBefore = engine(payrollBase, now: now).payrollSummary(at: now)
+    let payrollAfter = engine(payrollLeave, now: now).payrollSummary(at: now)
+    expectClose(
+        payrollAfter.regularGross, payrollBefore.regularGross - dailyPay,
+        "全天不计薪事假同步减少当前账期正常已赚",
+        tolerance: 0.01
+    )
+}
+
+do {
+    var config = baseConfig()
+    config.payMode = .net
+    config.tax.social.pension = .disabled
+    config.tax.social.medical = .disabled
+    config.tax.social.medicalFixed = .disabled
+    config.tax.social.unemployment = .disabled
+    config.tax.social.housingFund = .disabled
+    config.tax.monthlySpecialDeduction = .zero
+    config.tax.monthlyOtherDeduction = .zero
+    let now = date("2026-08-04 18:00:00")
+    let baseline = engine(config, now: now).snapshot(at: now)
+    var sick = config
+    sick.leaveEntries = [
+        LeaveEntry(dayKey: "2026-08-04", kind: .sick, portion: .fullDay)
+    ]
+    let sickSnap = engine(sick, now: now).snapshot(at: now)
+    expectClose(
+        sickSnap.dayTotal / baseline.dayTotal, 0.6,
+        "税后全天病假当天额度约为正常净额的 60%（累计预扣会造成小幅非线性）",
+        tolerance: 0.001
+    )
+    expectClose(sickSnap.dayEarned, sickSnap.dayTotal, "税后全天病假收工时拿满当天折算额度")
+    expectClose(
+        sickSnap.perSecond, baseline.perSecond,
+        "请假比例不显著改变正常工作时段秒薪",
+        tolerance: baseline.perSecond * 0.005
+    )
 }
 
 print("\n\(checks - failures)/\(checks) 项检查通过")

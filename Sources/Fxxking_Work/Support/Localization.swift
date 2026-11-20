@@ -1,13 +1,11 @@
-/// 界面语言。和地区分开：改语言不应该顺带把货币、数字、日期格式也改掉，
-/// 一个在中国上班的人把界面切成英文，金额还是该按本地习惯显示。
 import Foundation
 
-/// 带语言覆盖能力的字符串查找。
+/// 界面语言。和地区分开：改语言不应该顺带把货币、数字、日期格式也改掉，
+/// 一个在中国上班的人把界面切成英文，金额还是该按本地习惯显示。
+/// 缺阿拉伯语，它需要 RTL 布局，是另一件事。
 ///
-/// 查找发生在应用的每一层，包括断言程序里不在主线程跑的算钱逻辑，
-/// 所以当前语言放在锁后面而不是绑定到某个 actor 上。
-
-/// 联合国六种官方语言里的五种。缺阿拉伯语，它需要 RTL 布局，是另一件事。
+/// 新增语言只往后追加：`rawValue` 会进设置文件，已有 case 的顺序和拼写都不能动，
+/// 否则老用户的 `"english"`、`"simplifiedChinese"` 等值会解码失败。
 enum AppLanguage: String, Codable, CaseIterable, Identifiable, Sendable {
     case system
     case english
@@ -15,6 +13,8 @@ enum AppLanguage: String, Codable, CaseIterable, Identifiable, Sendable {
     case french
     case russian
     case spanish
+    case japanese
+    case korean
 
     var id: String { rawValue }
 
@@ -27,6 +27,8 @@ enum AppLanguage: String, Codable, CaseIterable, Identifiable, Sendable {
         case .french: return "fr"
         case .russian: return "ru"
         case .spanish: return "es"
+        case .japanese: return "ja"
+        case .korean: return "ko"
         }
     }
 
@@ -40,9 +42,16 @@ enum AppLanguage: String, Codable, CaseIterable, Identifiable, Sendable {
         case .french: return "Français"
         case .russian: return "Русский"
         case .spanish: return "Español"
+        case .japanese: return "日本語"
+        case .korean: return "한국어"
         }
     }
 }
+
+/// 带语言覆盖能力的字符串查找。
+///
+/// 查找发生在应用的每一层，包括断言程序里不在主线程跑的算钱逻辑，
+/// 所以当前语言放在锁后面而不是绑定到某个 actor 上。
 enum Loc {
     private static let state = State()
 
@@ -84,8 +93,13 @@ extension Loc {
         init(language: AppLanguage) {
             self.language = language
             self.locale = Self.resolveLocale(for: language)
-            self.bundle = Self.resolveBundle(for: language.localizationCode) ?? .main
-            self.english = Self.resolveBundle(for: "en")
+            let english = Self.resolveBundle(for: "en")
+            self.english = english
+            // 手动选了某种语言但对应 .lproj 还没打进包时，宁可显示英文，
+            // 也不要退回 `.main` 去跟随系统语言——那会让选择器和界面语言对不上。
+            // `.system` 的 localizationCode 是 nil，resolveBundle 仍返回 `.main`，
+            // 系统跟随的语义不变。
+            self.bundle = Self.resolveBundle(for: language.localizationCode) ?? english ?? .main
 
             var calendar = Calendar.current
             calendar.locale = locale

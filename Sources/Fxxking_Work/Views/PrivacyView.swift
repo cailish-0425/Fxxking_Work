@@ -17,18 +17,19 @@ struct PrivacyAmount: View {
                 privacy.toggle(surface)
             } label: {
                 Text(content())
+                    .accessibilityLabel(content())
+                    .accessibilityHint(Loc.t("privacy.hide"))
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(Loc.t("privacy.hide"))
         } else {
             Button {
                 privacy.toggle(surface)
             } label: {
                 Text("••••")
+                    .accessibilityLabel(Loc.t("privacy.reveal"))
+                    .accessibilityHint(Loc.t("privacy.reveal"))
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(Loc.t("privacy.reveal"))
-            .accessibilityHint(Loc.t("privacy.reveal"))
         }
     }
 }

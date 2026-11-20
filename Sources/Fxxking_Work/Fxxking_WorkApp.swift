@@ -9,6 +9,17 @@ struct Fxxking_WorkApp: App {
     @StateObject private var privacy: PrivacyController
     @StateObject private var overtime: OvertimeController
     @StateObject private var updater: UpdaterService
+    @StateObject private var screenCapture: ScreenCaptureMonitor
+    @StateObject private var paydayReminders: PaydayReminderService
+    /// 面板交互状态（理由会话 / 明细展开）放在保护层之外：
+    /// 屏幕采集期间内容整体移出视图树，这些状态不跟着销毁。
+    @StateObject private var panel = PanelUIState()
+    /// 设置窗口的页签与草稿同样放保护层外：短采集不会把页签弹回去、也不会丢未保存的工资变更。
+    @StateObject private var settingsUI = SettingsUIState()
+    /// 请假 / 加班编辑器里未保存的输入（只存内存，不落盘）：保护期间视图被移出视图树，
+    /// 草稿留在这里，回到内容态后编辑器可以按原样重新打开。
+    @StateObject private var drafts = EditingDraftStore()
+    private let onboardingWindow: OnboardingWindowController
 
     init() {
         let settings = SettingsStore()
@@ -18,47 +29,107 @@ struct Fxxking_WorkApp: App {
         privacy.bind(to: settings)
         let overtime = OvertimeController(settings: settings) { ticker.engine }
         let updater = UpdaterService()
+        let screenCapture = ScreenCaptureMonitor()
+        let paydayReminders = PaydayReminderService(settings: settings)
         _settings = StateObject(wrappedValue: settings)
         _holidays = StateObject(wrappedValue: holidays)
         _ticker = StateObject(wrappedValue: ticker)
         _privacy = StateObject(wrappedValue: privacy)
         _overtime = StateObject(wrappedValue: overtime)
         _updater = StateObject(wrappedValue: updater)
+        _screenCapture = StateObject(wrappedValue: screenCapture)
+        _paydayReminders = StateObject(wrappedValue: paydayReminders)
+        let onboardingWindow = OnboardingWindowController(
+            settings: settings,
+            screenCapture: screenCapture,
+            overtime: overtime
+        )
+        self.onboardingWindow = onboardingWindow
+        screenCapture.start()
+        DispatchQueue.main.async {
+            onboardingWindow.showIfNeeded()
+        }
     }
 
     var body: some Scene {
         MenuBarExtra {
-            MenuContentView()
+            ScreenCaptureGate {
+                MenuContentView()
+            }
                 .environmentObject(settings)
                 .environmentObject(holidays)
                 .environmentObject(ticker)
                 .environmentObject(privacy)
                 .environmentObject(overtime)
+                .environmentObject(screenCapture)
+                .environmentObject(panel)
+                .environmentObject(drafts)
                 // DatePicker、日历这些系统控件自己排版，得把语言选择也交给它们。
                 .environment(\.locale, Loc.locale)
                 .preferredColorScheme(settings.config.appearance.colorScheme)
                 .background(MenuBarPanelVisibility(
-                    onClose: { privacy.resetForLifecycle() }
+                    onClose: {
+                        privacy.resetForLifecycle()
+                        // 只有面板真正收起才复位交互状态；被保护层换掉时不能复位，
+                        // 否则每次截图都会把"理由读到一半 / 明细展开"清空。
+                        panel.resetForPanelClose()
+                    }
                 ))
                 .onDisappear { privacy.resetForLifecycle() }
+                .onChange(of: screenCapture.state) { _, state in
+                    // `pending` 起就清除临时揭示：短采集也可能紧接持续共享，保护结束后
+                    // 绝不能自动把之前揭示过的金额重新露出来，必须由用户重新点击。
+                    let presentation = ScreenCaptureProtectionPolicy.presentation(for: state)
+                    if ScreenCaptureProtectionPolicy.shouldResetReveal(onEntering: presentation) {
+                        privacy.resetForLifecycle()
+                    }
+                    if presentation == .content {
+                        panel.restoreAfterProtection()
+                    }
+                }
         } label: {
             // 用独立 Observable 视图：privacy 的 @Published 变化要立刻反映到标题，
             // 而不是等 ticker 下一秒推快照才顺带更新。
-            MenuBarTitleView(config: settings.config, earnings: ticker.earnings, privacy: privacy)
+            MenuBarTitleView(
+                config: settings.config,
+                earnings: ticker.earnings,
+                privacy: privacy,
+                screenCapture: screenCapture
+            )
         }
         .menuBarExtraStyle(.window)
 
         Settings {
-            SettingsView()
+            ScreenCaptureGate(showsSettingsButton: false) {
+                SettingsView()
+            }
                 .environmentObject(settings)
                 .environmentObject(holidays)
                 .environmentObject(ticker)
                 .environmentObject(privacy)
                 .environmentObject(overtime)
                 .environmentObject(updater)
+                .environmentObject(screenCapture)
+                .environmentObject(settingsUI)
+                .environmentObject(drafts)
                 .environment(\.locale, Loc.locale)
                 .preferredColorScheme(settings.config.appearance.colorScheme)
-                .onDisappear { privacy.resetForLifecycle() }
+                .onDisappear {
+                    privacy.resetForLifecycle()
+                    // 只有设置窗口真正关闭才丢弃页签与草稿。
+                    settingsUI.resetForWindowClose()
+                }
+                .onChange(of: screenCapture.state) { _, state in
+                    // 保护结束后把未提交的工资变更草稿和原页签接回来；
+                    // 金额本身仍按保护前的揭示状态保持隐藏（不自动重显）。
+                    let presentation = ScreenCaptureProtectionPolicy.presentation(for: state)
+                    if ScreenCaptureProtectionPolicy.shouldResetReveal(onEntering: presentation) {
+                        privacy.resetForLifecycle()
+                    }
+                    if presentation == .content {
+                        settingsUI.restoreAfterProtection()
+                    }
+                }
         }
     }
 }
@@ -73,30 +144,22 @@ private struct MenuBarTitleView: View {
     let config: Configuration
     let earnings: Earnings
     @ObservedObject var privacy: PrivacyController
+    @ObservedObject var screenCapture: ScreenCaptureMonitor
 
     var body: some View {
+        let protected = privacy.enabled || screenCapture.state.hidesAmounts
         let text = MenuBarLabel.text(
             config: config,
             earnings: earnings,
-            privacyEnabled: privacy.enabled,
-            isRevealed: MenuBarLabel.surface(for: config.menuBarDisplay)
-                .map { privacy.isRevealed($0) } ?? false
+            privacyEnabled: protected,
+            isRevealed: screenCapture.state == .inactive
+                && (MenuBarLabel.surface(for: config.menuBarDisplay)
+                    .map { privacy.isRevealed($0) } ?? false)
         )
         if config.showMenuBarIcon {
             Text("\(Image(systemName: "dollarsign.circle.fill")) \(text)")
         } else {
             Text(text)
-        }
-    }
-}
-
-/// 把配置里的外观选择映射成 SwiftUI 的配色偏好，模型层本身不依赖 SwiftUI。
-private extension AppAppearance {
-    var colorScheme: ColorScheme? {
-        switch self {
-        case .system: return nil
-        case .light: return .light
-        case .dark: return .dark
         }
     }
 }

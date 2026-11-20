@@ -78,7 +78,7 @@ struct TaxRegionPreset: Codable, Equatable {
     }
 
     static let beijing = TaxRegionPreset(
-        id: "beijing", name: "北京",
+        id: "beijing", name: "Beijing",
         socialBaseMinYuan: 7_270, socialBaseMaxYuan: 36_348,
         fundBaseMinYuan: 2_540, fundBaseMaxYuan: 36_348,
         pensionRateBp: 800, medicalRateBp: 200, unemploymentRateBp: 50,
@@ -93,7 +93,7 @@ struct TaxRegionPreset: Codable, Equatable {
     )
 
     static let shanghai = TaxRegionPreset(
-        id: "shanghai", name: "上海",
+        id: "shanghai", name: "Shanghai",
         socialBaseMinYuan: 7_546, socialBaseMaxYuan: 37_731,
         fundBaseMinYuan: 2_740, fundBaseMaxYuan: 37_731,
         pensionRateBp: 800, medicalRateBp: 200, unemploymentRateBp: 50,
@@ -109,4 +109,16 @@ struct TaxRegionPreset: Codable, Equatable {
 
     /// 已知参考地区清单（不含 custom）。
     static let all: [TaxRegionPreset] = [.beijing, .shanghai]
+}
+
+extension TaxRegionPreset {
+    /// 用户可见的名字。`id` 和 `name` 保持稳定，仅显示层跟随界面语言；
+    /// 每次读取都走 Loc，切换语言后无需重建 presets 就能更新。
+    var displayName: String {
+        switch id {
+        case "beijing": return Loc.t("salary.tax.region.beijing")
+        case "shanghai": return Loc.t("salary.tax.region.shanghai")
+        default: return name
+        }
+    }
 }
